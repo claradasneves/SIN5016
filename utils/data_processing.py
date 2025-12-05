@@ -1,6 +1,23 @@
 import pandas as pd
 import numpy as np
 
+def one_hot_encoding(y, K):
+    """
+    Aplica transformação na representação categórica dos rótulos em representação numérica
+    
+    Args:
+        :param y: lista de rótulos com representação categórica
+        :param K: quantidade de classes
+
+    Returns
+        lista de classes transformada em representação numérica
+    """
+    N = y.shape[0]
+    y_one_hot = np.zeros((N, K))
+    y_one_hot[np.arange(N), y] = 1
+    
+    return y_one_hot
+
 def split_train_test(X, y, rate=0.8, shuffle=True):
     """
     Divide o dataset em conjuntos de treino e teste. Segue a proporção 80/20, mas é ajustável.
