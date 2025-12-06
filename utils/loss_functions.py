@@ -6,24 +6,23 @@ Funções de custo para os modelos
 
 import numpy as np
 
-def mae(y_true: np.array, y_pred: np.array):
-    return np.mean(np.abs(y_pred - y_true))
+def mae(y_true: np.array, y_pred: np.array, gradient=False):
+    
+    if not gradient:
+        return np.mean(np.abs(y_pred - y_true))
+    
+    else:
+        # Gradiente descendente da MAE
+        return np.sign(y_pred - y_true)
 
-def gradient_mae(y_true: np.array, y_pred : np.array):
-    """
-    Gradiente descendente da MAE
-    """
-    return np.sign(y_pred - y_true)
-
-def mse(y_true: np.array, y_pred: np.array):   
-    return np.mean((y_pred - y_true)**2)
-
-def gradient_mse(y_true: np.array, y_pred: np.array):
-    """
-    Gradiente descendente da MSE
-    """
-
-    return 2*np.mean(y_pred - y_true)
+def mse(y_true: np.array, y_pred: np.array, gradient=False):   
+    
+    if not gradient:
+        return np.mean((y_pred - y_true)**2)
+    
+    else:
+        # Gradiente descendente da MSE
+        return 2*np.mean(y_pred - y_true)
 
 def entropia_cruzada(
         y_true: np.array, 
