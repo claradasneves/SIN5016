@@ -4,14 +4,16 @@ Funções de ativações úteis para os modelos
 
 import numpy as np
 
-def tanh(z):
+def tanh(z, derivative=False):
     """Função da tangente hiperbólica"""
-    return (np.exp(z) - np.exp(-z)) / (np.exp(z) + np.exp(-z))
-
-def dtanh(z):
-    """derivada da função da tangente hiperbólica"""
-    # z já é a tanh
-    return 1 - z**2
+    
+    if not derivative:
+        # tanh
+        return (np.exp(z) - np.exp(-z)) / (np.exp(z) + np.exp(-z))
+    else:
+        # derivada da tanh
+        # z já é a tanh
+        return 1 - z**2
 
 def softmax(logit):
     """
