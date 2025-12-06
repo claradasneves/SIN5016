@@ -13,6 +13,7 @@ def tanh(z, derivative=False):
     else:
         # derivada da tanh
         # z já é a tanh
+        z = (np.exp(z) - np.exp(-z)) / (np.exp(z) + np.exp(-z))
         return 1 - z**2
 
 def softmax(logit):
