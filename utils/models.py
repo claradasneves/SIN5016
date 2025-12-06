@@ -99,7 +99,7 @@ class MLP():
             optimizer='GD',
             epochs=1000, 
             learning_rate=0.001,
-            tol=0.001,
+            tol=0.01,
         ):
         """
         Função de treino para a MLP
@@ -141,7 +141,7 @@ class MLP():
                 break
 
             history_loss.append(loss)
-            print(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val cost function {val_loss}')
+            print(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val loss {val_loss}')
         
         history_loss = np.array(history_loss)
 
