@@ -15,12 +15,12 @@ class MLP():
         self.K = num_classes # qtdade de classes para predição
 
         # W: matriz com pesos da camada de entrada
-        self.W = np.random.randn(self.M, self.H) * 0.001 # shape: (M, H)
-        # TODO: self.W = np.insert(W, 0, 1, axis=1) # add bias
+        self.W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
+        # self.W = np.insert(W, 0, 1, axis=1) # add bias
         
         # V: matriz com pesos da camada de saida
-        self.V = np.random.randn(self.H, self.K) * 0.001 # shape: (H, K)
-        # TODO: self.V = np.insert(V, 0, 1, axis=1) # add bias
+        self.V = np.random.randn(self.H, self.K) * 0.01 # shape: (H, K)
+        # self.V = np.insert(V, 0, 1, axis=1) # add bias
 
         self.hidden_layer_activation = hidden_layer_activation
         self.output_layer_activation = output_layer_activation
@@ -33,16 +33,13 @@ class MLP():
             batch_size=16,
         ):
                     
-        N = batch_size
+        N = X.shape[0]
         losses = []
 
         for idx in range(0, N, batch_size):
 
             batch_x = X[idx:idx+batch_size]
             batch_y = y[idx:idx+batch_size]
-
-            # TODO: adiciona intercepto
-            # batch_x = np.insert(batch_x, 0, 1, axis=1)
         
             y_pred = self.predict(batch_x) # shape: (N, k)
             
@@ -58,15 +55,15 @@ class MLP():
             
             Delta1 = \
                 erro_propagado * self.hidden_layer_activation(
-                    w_hidden, derivative=True,
+                    logit, derivative=True,
                 ) # shape: (N, h) * (N, h) -> (N, h)
             
             dEdV = grad_erro.T.dot(w_hidden) # shape: (k, N) x (N, h) -> (k, h)
-            dEdW = batch_x.T.dot(Delta1) / N # shape: (m, N) x (N, h) -> (m, h)
+            dEdW = batch_x.T.dot(Delta1) / batch_size # shape: (m, N) x (N, h) -> (m, h)
             
             self.W -= alpha * dEdW # shape: (m, h) * (m, h)
             self.V -= alpha * dEdV.T # shape: (h, k) * (h, k)
-                
+                    
         losses = np.array(losses)
 
         return losses, dEdW, dEdV
@@ -81,7 +78,7 @@ class MLP():
         Returns
             lista de rótulos preditos
         """
-        
+
         logit = X.dot(self.W) # shape: (N, m) x (m, h) -> (N, h)
 
         z_hidden = self.hidden_layer_activation(logit) # shape: (N, h)
@@ -140,8 +137,9 @@ class MLP():
                 print(f'Convergência atingida no Gradiente | Época {epoch}')
                 break
 
-            history_loss.append(loss)
             print(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val loss {val_loss}')
+            
+            history_loss.append([np.mean(loss), val_loss])
         
         history_loss = np.array(history_loss)
 
