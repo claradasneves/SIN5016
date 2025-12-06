@@ -15,12 +15,12 @@ class MLP():
         self.K = num_classes # qtdade de classes para predição
 
         # W: matriz com pesos da camada de entrada
-        W = np.random.randn(self.M, self.H) * 0.001 # shape: (M, H)
-        self.W = np.insert(W, 0, 1, axis=1) # add bias
+        self.W = np.random.randn(self.M, self.H) * 0.001 # shape: (M, H)
+        # TODO: self.W = np.insert(W, 0, 1, axis=1) # add bias
         
         # V: matriz com pesos da camada de saida
-        V = np.random.randn(self.H, self.K) * 0.001 # shape: (H, K)
-        self.V = np.insert(V, 0, 1, axis=1) # add bias
+        self.V = np.random.randn(self.H, self.K) * 0.001 # shape: (H, K)
+        # TODO: self.V = np.insert(V, 0, 1, axis=1) # add bias
 
         self.hidden_layer_activation = hidden_layer_activation
         self.output_layer_activation = output_layer_activation
@@ -40,26 +40,32 @@ class MLP():
 
             batch_x = X[idx:idx+batch_size]
             batch_y = y[idx:idx+batch_size]
+
+            # TODO: adiciona intercepto
+            # batch_x = np.insert(batch_x, 0, 1, axis=1)
         
-            y_pred = self.predict(batch_x)
+            y_pred = self.predict(batch_x) # shape: (N, k)
             
-            logit = batch_x.dot(self.W)
-            w_hidden = self.hidden_layer_activation(logit)
+            logit = batch_x.dot(self.W) # shape: (N, m) x (m, h) -> (N, h)
+            w_hidden = self.hidden_layer_activation(logit) # shape: (N, h)
             
-            loss = cost_function(batch_y, y_pred)
+            loss = cost_function(batch_y, y_pred) # shape: (N, k)
             losses.append(loss)
 
-            grad_erro = (batch_y - y_pred)
+            grad_erro = (batch_y - y_pred) # shape: (N, k)
             
-            erro_propagado = grad_erro.dot(self.V.T)
+            erro_propagado = grad_erro.dot(self.V.T) # shape: (N, k) x (k, h) -> (N, h)
             
-            Delta1 = erro_propagado * cost_function(w_hidden, mode='derivative')
+            Delta1 = \
+                erro_propagado * self.hidden_layer_activation(
+                    w_hidden, derivative=True,
+                ) # shape: (N, h) * (N, h) -> (N, h)
             
-            dEdV = grad_erro.T.dot(w_hidden)
-            dEdW = batch_x.T.dot(Delta1) / N
+            dEdV = grad_erro.T.dot(w_hidden) # shape: (k, N) x (N, h) -> (k, h)
+            dEdW = batch_x.T.dot(Delta1) / N # shape: (m, N) x (N, h) -> (m, h)
             
-            self.W -= alpha * dEdW
-            self.V -= alpha * dEdV
+            self.W -= alpha * dEdW # shape: (m, h) * (m, h)
+            self.V -= alpha * dEdV.T # shape: (h, k) * (h, k)
                 
         losses = np.array(losses)
 
@@ -108,7 +114,7 @@ class MLP():
                 loss, dEdW, dEdV = self.gradient_descent(
                     cost_function=cost_function,
                     X=X_train, y=y_train,
-                    alpha=learning_rate, n_epochs=epochs
+                    alpha=learning_rate,
                 )
 
             elif optimizer == 'newton':
@@ -135,8 +141,7 @@ class MLP():
                 break
 
             history_loss.append(loss)
-            print(f'Avg training loss (GD)={np.mean(loss)}')
-            print('Avg val cost function', val_loss)
+            print(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val cost function {val_loss}')
         
         history_loss = np.array(history_loss)
 
