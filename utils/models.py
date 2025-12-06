@@ -16,11 +16,11 @@ class MLP():
 
         # W: matriz com pesos da camada de entrada
         self.W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
-        # self.W = np.insert(W, 0, 1, axis=1) # add bias
+        # TODO: self.W = np.insert(W, 0, 1, axis=1) # add bias
         
         # V: matriz com pesos da camada de saida
         self.V = np.random.randn(self.H, self.K) * 0.01 # shape: (H, K)
-        # self.V = np.insert(V, 0, 1, axis=1) # add bias
+        # TODO: self.V = np.insert(V, 0, 1, axis=1) # add bias
 
         self.hidden_layer_activation = hidden_layer_activation
         self.output_layer_activation = output_layer_activation
