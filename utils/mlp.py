@@ -43,7 +43,7 @@ def gradient_cross_entropy(X, w, v, y_one_hot):
     Gradiente da Entropia Cruzada (Negativo da Log-Verossimilhança).
     """
 
-    y_pred = mlp(X, w, v)
+    y_pred = predict(X, w, v)
 
     return -y_one_hot / (1 + y_pred)
 
@@ -65,7 +65,7 @@ def gradient_descent(
         
         N = X.shape[0]
         
-        y_pred = mlp(X, W, V)
+        y_pred = predict(X, W, V)
         logit = X.dot(W)
         w_hidden = tanh(logit)
         
@@ -109,7 +109,7 @@ def fit(
 
     M = X_train.shape[1]
     K = y_train_one_hot.shape[1]
-    h = 3
+    h = 3 # numero de neurônios
 
     # Inicializa pesos com valores pequenos para estabilidade
     W = np.random.randn(M, h) * 0.001
