@@ -108,7 +108,7 @@ def extract_hog_feature(
             orientations=orientations,
             pixels_per_cell=pixels_per_cell,
             cells_per_block=cells_per_block,
-            visualize=True,
+            visualize=False,
             feature_vector=True,
         )
         return features, hog_image
@@ -118,7 +118,7 @@ def extract_hog_feature(
             orientations=orientations,
             pixels_per_cell=pixels_per_cell,
             cells_per_block=cells_per_block,
-            visualize=True,
+            visualize=False,
             feature_vector=True,
         )
         return features
@@ -144,7 +144,7 @@ def extract_hog_batch(
             orientations=orientations,
             pixels_per_cell=pixels_per_cell,
             cells_per_block=cells_per_block,
-            visualize=True,
+            visualize=False,
             resize_to=resize_to,
         )
         feats.append(f)
