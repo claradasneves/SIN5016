@@ -1,18 +1,18 @@
 import numpy as np
 
-def regularization(weights, gamma=0.00001, q=1):
+def regularization(weights, gamma=1e-5, q=1):
     """
     Função abstrata para calcular a regularização. Considera os cenários de Lasso (q=0) e Ridge (q=1)
     """
     return gamma * (np.abs(weights)**q).sum()
 
-def lasso_regularization(cost_function, w):
+def lasso(cost_function, w):
     """
     Aplica função de custo com regularização Lasso
     """
     return cost_function + regularization(w, q=1)
 
-def ridge_regularization(cost_function, w):
+def ridge(cost_function, w):
     """
     Aplica função de custo com regularização Ridge
     """
