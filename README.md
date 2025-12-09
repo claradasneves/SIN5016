@@ -47,3 +47,8 @@ custo (ou de erro) aplicada na saída da rede, método de inicialização dos pe
 - R01 Duração de 10 a 15 min, formato MP4, resolução suficiente para o código estar legível.
 - R02 Cada membro deve gravar um exemplo explicando a codificação realizada por 02 modelos
 - R03 Cada membro deve demonstrar conhecimento de todos os códigos desenvolvido
+
+---
+## Como rodar o código?
+No terminal execute: 
+`python -m src.main` 
