@@ -1,8 +1,8 @@
 import numpy as np
-from utils.models import MLP, RegLog
-from utils.activations import tanh, softmax
-from utils.data_processing import one_hot_encoding, split_train_test
-from utils.loss_functions import entropia_cruzada
+from .models import MLP, RegLog
+from .utils.activations import tanh, softmax
+from .utils.data_processing import one_hot_encoding, split_train_test
+from .utils.loss_functions import entropia_cruzada
 from sklearn.datasets import fetch_olivetti_faces
 import matplotlib.pyplot as plt
 
@@ -41,22 +41,24 @@ if __name__ == '__main__':
     #     num_neurons=1,
     #     hidden_layer_activation=tanh,
     #     output_layer_activation=softmax,
+    #     cost_function=entropia_cruzada,
     # )
+
     model = RegLog(
         num_features=num_features,
         num_classes=num_classes,
+        cost_function=entropia_cruzada,
+        regularization='l1',
     )
 
     # 5 - aplica .fit() do modelo
     history_loss = model.fit(
-        cost_function=entropia_cruzada,
         X_train=X_train,
         y_train=y_train,
         X_test=X_test,
         y_test=y_test,
         learning_rate=1e-4,
         epochs=EPOCHS,
-        regularization='lasso',
     )
 
     print('avg training loss:', np.mean(history_loss))
