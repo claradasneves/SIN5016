@@ -9,6 +9,7 @@ class MLP():
             num_neurons,
             hidden_layer_activation,
             output_layer_activation,
+            cost_function,
         ):       
         self.M = num_features
         self.H = num_neurons # qtdade de neurônios na camada escondida
@@ -23,10 +24,10 @@ class MLP():
 
         self.hidden_layer_activation = hidden_layer_activation
         self.output_layer_activation = output_layer_activation
+        self.cost_function = cost_function
 
     def gradient_descent(
             self,
-            cost_function,
             X, y,
             alpha=0.001,
             batch_size=16,
@@ -45,7 +46,7 @@ class MLP():
             logit = batch_x.dot(self.W) # shape: (N, m) x (m, h) -> (N, h)
             w_hidden = self.hidden_layer_activation(logit) # shape: (N, h)
             
-            loss = cost_function(batch_y, y_pred) # shape: (N, k)
+            loss = self.cost_function(batch_y, y_pred) # shape: (N, k)
             losses.append(loss)
 
             grad_erro = (batch_y - y_pred) # shape: (N, k)
@@ -90,7 +91,6 @@ class MLP():
     
     def fit(
             self,
-            cost_function,
             X_train, y_train, X_test, y_test,
             optimizer='GD',
             epochs=1000, 
@@ -112,7 +112,6 @@ class MLP():
         
             if optimizer == 'GD':
                 loss, dEdW, dEdV = self.gradient_descent(
-                    cost_function=cost_function,
                     X=X_train, y=y_train,
                     alpha=learning_rate,
                 )
@@ -133,7 +132,7 @@ class MLP():
             # Avaliação Final
             y_pred_val = self.predict(X_test)
 
-            val_loss = cost_function(y_test, y_pred_val)
+            val_loss = self.cost_function(y_test, y_pred_val)
 
             # Verifica a convergência baseado na norma dos gradientes
             if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
