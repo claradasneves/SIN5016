@@ -8,29 +8,25 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     # 1 - carrega dados
-    EPOCHS = 500
-    # N = 1000
-    # height = 128
-    # widht = 128
-    # channels = 3
-
-    # X = np.random.rand(N, channels, height, widht) # imagens mock
-    # y = np.random.randint(low=0, high=2, size=N)
+    EPOCHS = 3000
     
     mock_faces = fetch_olivetti_faces()
+    
     X = mock_faces.data
     y = mock_faces.target
 
-    N = X.shape[0]
-    K=len(np.unique(mock_faces.target))
 
     # 2 - converte rótulos com one-hot-encoding
+    N = X.shape[0]
     X = X.reshape(N, -1) # shape: (N, channels * height * width)
-
-    X /= 255
-    # TODO X = np.insert(X, 0, 1, axis=1) # add bias
     
-    y = one_hot_encoding(y, K)
+    num_classes=len(np.unique(mock_faces.target))
+    num_features = X.shape[-1]
+
+    # 2.1 - normaliza imagens
+    X /= 255
+    
+    y = one_hot_encoding(y, num_classes)
 
     # 3 - divide em partição de treino/teste
     X_train, y_train, X_test, y_test = split_train_test(X, y, rate=0.9)
@@ -39,9 +35,9 @@ if __name__ == '__main__':
 
     # 4 - define modelo
     model = MLP(
-        num_features=X.shape[-1],
-        num_classes=K,
-        num_neurons=10,
+        num_features=num_features,
+        num_classes=num_classes,
+        num_neurons=1,
         hidden_layer_activation=tanh,
         output_layer_activation=softmax,
     )
