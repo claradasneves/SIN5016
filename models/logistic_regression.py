@@ -7,6 +7,7 @@ class RegLog():
             self,
             num_features,
             num_classes,
+            cost_function,
         ):
         self.M = num_features
         self.K = num_classes
@@ -14,13 +15,14 @@ class RegLog():
         W = np.random.randn(self.M, self.K)
         self.W = np.insert(W, 0, 1, axis=0) # add bias
 
+        self.cost_function = cost_function
+
     def gradient_descent(
             self,
-            cost_function,
             X, y,
-            alpha=0.001, 
-            tol=0.01,
-            batch_size=16):
+            alpha=0.001,
+            batch_size=16,
+        ):
         """"
         Args:
             x: input vector
@@ -42,7 +44,7 @@ class RegLog():
             
             y_pred = self.predict(batch_x)
 
-            loss = cost_function(batch_y, y_pred)
+            loss = self.cost_function(batch_y, y_pred)
             losses.append(loss)
 
             # shape: (N, m).T -> (m, N) x (N, k) -> (m, k)
@@ -71,7 +73,6 @@ class RegLog():
     
     def fit(
         self,
-        cost_function,
         X_train, y_train, X_test, y_test,
         optimizer='GD',
         epochs=1000, 
@@ -90,14 +91,13 @@ class RegLog():
                 loss, dEdW = self.gradient_descent(
                     X=X_train, 
                     y=y_train,
-                    cost_function=cost_function,
                     alpha=learning_rate,
                 )
 
             # Avaliação Final
             y_pred_val = self.predict(X_test)
 
-            val_loss = cost_function(y_test, y_pred_val)
+            val_loss = self.cost_function(y_test, y_pred_val)
             history_loss.append([np.mean(loss), val_loss])
 
             if np.linalg.norm(dEdW) < tol: break
