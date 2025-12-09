@@ -48,7 +48,6 @@ if __name__ == '__main__':
         num_features=num_features,
         num_classes=num_classes,
         cost_function=entropia_cruzada,
-        regularization='l1',
     )
 
     # 5 - aplica .fit() do modelo

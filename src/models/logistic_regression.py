@@ -1,5 +1,6 @@
 import numpy as np
 from ..utils.activations import softmax
+from ..utils.regularizations import lasso
 
 class RegLog():
     """ regressão logística"""
@@ -51,6 +52,8 @@ class RegLog():
 
             # shape: (N, m).T -> (m, N) x (N, k) -> (m, k)
             dEdW = batch_x.T.dot(y_pred - batch_y) / batch_size
+
+            # TODO regularization
             
             self.W -= alpha * dEdW
         
