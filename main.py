@@ -5,6 +5,12 @@ from utils.data_processing import one_hot_encoding, split_train_test
 from utils.loss_functions import entropia_cruzada
 from sklearn.datasets import fetch_olivetti_faces
 import matplotlib.pyplot as plt
+import argparse
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-m', '--model', help='Escolha `mlp` para MLP ou `reglog` para Regressão Logística')
+args = parser.parse_args()
 
 if __name__ == '__main__':
     # 1 - carrega dados
@@ -14,7 +20,6 @@ if __name__ == '__main__':
     
     X = mock_faces.data
     y = mock_faces.target
-
 
     # 2 - converte rótulos com one-hot-encoding
     N = X.shape[0]
@@ -35,20 +40,22 @@ if __name__ == '__main__':
     print('Test set shapes', X_test.shape, y_test.shape)
 
     # 4 - define modelo
-    # model = MLP(
-    #     num_features=num_features,
-    #     num_classes=num_classes,
-    #     num_neurons=1,
-    #     hidden_layer_activation=tanh,
-    #     output_layer_activation=softmax,
-    #     cost_function=entropia_cruzada,
-    # )
+    if args.model == 'mlp': 
+        model = MLP(
+            num_features=num_features,
+            num_classes=num_classes,
+            num_neurons=1,
+            hidden_layer_activation=tanh,
+            output_layer_activation=softmax,
+            cost_function=entropia_cruzada,
+        )
 
-    model = RegLog(
-        num_features=num_features,
-        num_classes=num_classes,
-        cost_function=entropia_cruzada,
-    )
+    elif args.model == 'reglog':
+        model = RegLog(
+            num_features=num_features,
+            num_classes=num_classes,
+            cost_function=entropia_cruzada,
+        )
 
     # 5 - aplica .fit() do modelo
     history_loss = model.fit(
