@@ -51,4 +51,7 @@ custo (ou de erro) aplicada na saída da rede, método de inicialização dos pe
 ---
 ## Como rodar o código?
 No terminal execute: 
-`python -m src.main` 
+`python main.py --model mlp` para rodar a MLP
+
+OU execute:
+`python main.py --model reglog` para a Regressão Logística
