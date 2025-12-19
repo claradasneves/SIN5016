@@ -1,6 +1,5 @@
 import numpy as np
-from ..utils.activations import softmax
-from ..utils.regularizations import lasso
+
 
 class RegLog():
     """ regressão logística"""
@@ -66,7 +65,14 @@ class RegLog():
         
         logit = X.dot(self.W)
 
-        return softmax(logit=logit)
+        logit_max = np.max(logit, axis=1, keepdims=True)
+        logit_estavel = logit - logit_max
+        
+        exp_logit = np.exp(logit_estavel)
+
+        exp_categorias = np.sum(exp_logit, axis=1, keepdims=True)
+        
+        return exp_logit / exp_categorias
     
     def fit(
         self,
