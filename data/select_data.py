@@ -61,6 +61,27 @@ def copiar_imagens(imagens: list, pasta_origem: str, pasta_destino: str, id_proc
             print(f"  ✗ Arquivo não encontrado: {img}")
 
 
+def obter_ids_mais_frequentes(df: pd.DataFrame, top_k: int = 20) -> list:
+    """
+    Retorna os IDs das pessoas mais frequentes no dataset.
+
+    Args:
+        df: DataFrame com colunas ['imagem', 'id']
+        top_k: número de IDs mais frequentes a retornar
+
+    Returns:
+        Lista de IDs (int) mais frequentes
+    """
+    ids_top = (
+        df['id']
+        .value_counts()      # conta quantas imagens por ID
+        .head(top_k)         # pega os top_k mais frequentes
+        .index               # pega os IDs
+        .tolist()
+    )
+    return ids_top
+
+
 def main(arquivo_txt: str = None,
          pasta_imagens: str = None,
          ids_procurados: list = None,
@@ -74,6 +95,9 @@ def main(arquivo_txt: str = None,
         ids_procurados: Lista de IDs a processar
         destino: Caminho para a pasta de destino
     """
+    # Carregar dados
+    df = carregar_dados(arquivo_txt)
+
     # Usar valores padrão relativos ao diretório do script
     if arquivo_txt is None:
         arquivo_txt = os.path.join(SCRIPT_DIR, "atributos/identity_CelebA.txt")
@@ -82,11 +106,8 @@ def main(arquivo_txt: str = None,
     if destino is None:
         destino = os.path.join(SCRIPT_DIR, "selected_images/")
     if ids_procurados is None:
-        ids_procurados = ["2937"] # Exemplo de ID padrão, aceita IDs múltiplos
-    
-    # Carregar dados
-    df = carregar_dados(arquivo_txt)
-    
+        ids_procurados = obter_ids_mais_frequentes(df, top_k=20)
+
     # Criar pasta de destino
     os.makedirs(destino, exist_ok=True)
     print(f"Pasta de destino criada/verificada: {destino}")

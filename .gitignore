@@ -2,3 +2,4 @@
 .venv/
 data/atributos/
 data/img_align_celeba/
+*__pycache__
