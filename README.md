@@ -15,6 +15,21 @@ OU execute:
 Para adicionar Regularização, exemplo:
 >> `python main.py --model <MODELO> --regularization l1`
 
+### Opções adicionais
+Você pode configurar a pasta de atributos, o arquivo de identidades e o número de classes utilizando os seguintes argumentos:
+
+--features-dir
+Caminho para a pasta contendo as features (ex.: HOG) ou para um arquivo .npy com todas as features.
+>> `python main.py --model mlp --features-dir caminho/para/features`
+
+--identity-file
+Arquivo .txt que faz o mapeamento entre imagem e identidade (pessoa).
+>> `python main.py --model reglog --identity-file caminho/para/identity.txt`
+
+--num-classes
+Número de classes (pessoas) a serem utilizadas. Por padrão, são selecionadas as classes com mais amostras.
+>> `python main.py --model mlp --num-classes 300`
+
 ## Código
 - Baixar o dataset
 - Aplicar HOG (gera um histograma de orientações de cada pixel) nos dados (podemos escolher outro descritor, como  LPB (Local Pattern Binary) ou Transformada Wavelet) -> no caso de usar mais descritores, gerar outro modelo

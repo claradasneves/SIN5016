@@ -6,13 +6,185 @@ from utils.loss_functions import entropia_cruzada
 from sklearn.datasets import fetch_olivetti_faces
 import matplotlib.pyplot as plt
 import argparse
+import numpy as _np
+import os as _os
+import glob as _glob
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-m', '--model', help='Escolha `mlp` para MLP ou `reglog` para Regressão Logística')
 parser.add_argument('-r', '--regularization', help='Regularização `l1`, `l2`, ou `elastic-net`')
+parser.add_argument('--features-dir', default=None,
+                    help='Pasta contendo features HOG (.npy por imagem) ou contendo um único arquivo .npy com features (necessita mapping). Ex: hog_features_2025...')
+parser.add_argument('--identity-file', default=_os.path.join('data', 'atributos', 'identity_CelebA.txt'),
+                    help='Arquivo txt com mapeamento imagem -> id (padrão: data/atributos/identity_CelebA.txt)')
+parser.add_argument('--num-classes', type=int, default=500,
+                    help='Número de classes (pessoas) a selecionar. Serão selecionadas as classes com mais amostras. Use 0 para incluir todas (padrão: 500).')
 
 args = parser.parse_args()
+
+
+def _load_identity(identity_file: str):
+    import pandas as pd
+    # tenta inferir separador (alguns arquivos têm múltiplos espaços)
+    df = pd.read_csv(identity_file, sep=r'\s+', header=None, names=['imagem', 'id'], engine='python')
+    return df
+
+
+def _load_features_and_labels_from_dir(features_dir: str, identity_df):
+    """
+    Tenta carregar features a partir de um diretório.
+
+    Suporta dois casos comuns:
+    1) Diretório contendo vários arquivos .npy, cada um correspondendo a uma imagem. O nome do arquivo
+       pode ser o stem da imagem (ex: '000002.npy') ou o nome completo sem extensão (ex: '000002.jpg.npy').
+    2) Diretório contendo um único arquivo .npy com shape (N, D) -- nesse caso precisamos de um arquivo
+       de mapeamento; se não houver, o loader retorna erro informativo.
+
+    Retorna (X, y, image_names)
+    """
+    features_dir = _os.path.abspath(features_dir)
+    npy_files = sorted([p for p in _glob.glob(_os.path.join(features_dir, '*.npy'))])
+
+    # preparar mapping de identidade: imagem (basename) -> pessoa id
+    identity_df = identity_df.copy()
+    identity_df['basename'] = identity_df['imagem'].apply(lambda s: _os.path.basename(s))
+    identity_df['stem'] = identity_df['basename'].apply(lambda s: _os.path.splitext(s)[0])
+
+    # Caso A: vários .npy por imagem
+    if len(npy_files) > 1:
+        # construir dict stem->path e basename->path
+        stem_map = {}
+        basename_map = {}
+        for p in npy_files:
+            name = _os.path.basename(p)
+            stem = _os.path.splitext(name)[0]
+            # aceitar sufixos comuns como '_hog' -> mapear também para o prefixo
+            stem_map[stem] = p
+            if stem.endswith('_hog'):
+                stem_map[stem[:-4]] = p
+            basename_map[name] = p
+
+        X_list = []
+        y_list = []
+        img_names = []
+        for _, row in identity_df.iterrows():
+            # prefer stem match
+            if row['stem'] in stem_map:
+                feat_path = stem_map[row['stem']]
+            elif row['basename'] in basename_map:
+                feat_path = basename_map[row['basename']]
+            else:
+                continue
+
+            try:
+                feat = _np.load(feat_path)
+            except Exception:
+                # pular arquivo com erro
+                continue
+
+            X_list.append(feat.reshape(-1))
+            y_list.append(int(row['id']))
+            img_names.append(row['basename'])
+
+        if not X_list:
+            raise RuntimeError('Nenhuma feature compatível encontrada no diretório fornecido.')
+
+        X = _np.vstack(X_list)
+        y = _np.array(y_list, dtype=int)
+        return X, y, img_names
+
+    # Caso B: único .npy no diretório
+    if len(npy_files) == 1:
+        # tenta carregar e tentar alinhar pelo número de entradas
+        feats = _np.load(npy_files[0])
+        # se há arquivo de mapping (image_names.txt, paths.npy etc.)
+        mapping_candidates = [
+            _os.path.join(features_dir, 'image_names.txt'),
+            _os.path.join(features_dir, 'image_names.npy'),
+            _os.path.join(features_dir, 'paths.txt'),
+            _os.path.join(features_dir, 'paths.npy'),
+        ]
+        for m in mapping_candidates:
+            if _os.path.exists(m):
+                # carregar mapeamento
+                if m.endswith('.txt'):
+                    with open(m, 'r') as fh:
+                        names = [ln.strip() for ln in fh if ln.strip()]
+                else:
+                    names = list(_np.load(m))
+
+                # alinhar names com identity
+                df_map = identity_df[identity_df['basename'].isin([_os.path.basename(n) for n in names])]
+                if df_map.empty:
+                    raise RuntimeError('Arquivo de mapping encontrado, mas nenhuma imagem bate com identity file.')
+
+                # construir X,y filtrando apenas names que estão no identity
+                X_list = []
+                y_list = []
+                img_names = []
+                for i, n in enumerate(names):
+                    bn = _os.path.basename(n)
+                    rows = identity_df[identity_df['basename'] == bn]
+                    if rows.empty:
+                        continue
+                    X_list.append(feats[i].reshape(-1))
+                    y_list.append(int(rows.iloc[0]['id']))
+                    img_names.append(bn)
+
+                if not X_list:
+                    raise RuntimeError('Nenhuma correspondência entre mapping e identity file.')
+
+                X = _np.vstack(X_list)
+                y = _np.array(y_list, dtype=int)
+                return X, y, img_names
+
+        # sem mapping: se o número de features coincide com a quantidade de linhas no identity_df,
+        # assumimos que a ordem corresponde (aviso será emitido)
+        if feats.shape[0] == identity_df.shape[0]:
+            X = feats
+            y = identity_df['id'].to_numpy(dtype=int)
+            img_names = identity_df['basename'].tolist()
+            print('Aviso: alinhando features por posição com identity file (mesmo número de entradas).')
+            return X, y, img_names
+
+        raise RuntimeError('Não foi possível inferir mapeamento entre features e identity file. Forneça um diretório com .npy por imagem nomeados ou um arquivo de mapping.')
+
+
+def stratified_split(X, y, train_size=0.9):
+    """Divide X e y mantendo a proporção de classes em ambos conjuntos (estratificação).
+    
+    Args:
+        X: features (N, D)
+        y: one-hot encoded labels (N, K)
+        train_size: proporção para treino (padrão 0.9 = 90% treino, 10% teste)
+    
+    Returns:
+        X_train, y_train, X_test, y_test
+    """
+    N = X.shape[0]
+    y_idx = _np.argmax(y, axis=1)  # converter one-hot para índices
+    unique_classes = _np.unique(y_idx)
+    
+    train_idx = []
+    test_idx = []
+    
+    for cls in unique_classes:
+        cls_indices = _np.where(y_idx == cls)[0]
+        n_cls = len(cls_indices)
+        n_train_cls = max(1, int(n_cls * train_size))
+        
+        # embaralhar índices dessa classe
+        _np.random.shuffle(cls_indices)
+        
+        train_idx.extend(cls_indices[:n_train_cls])
+        test_idx.extend(cls_indices[n_train_cls:])
+    
+    train_idx = _np.array(train_idx)
+    test_idx = _np.array(test_idx)
+    
+    return X[train_idx], y[train_idx], X[test_idx], y[test_idx]
+
 
 def plot_kfold_losses(all_folds_history):
     # 1. Padronizar o comprimento (folds podem ter parado antes devido ao 'tol')
@@ -57,35 +229,77 @@ def plot_kfold_losses(all_folds_history):
 
 if __name__ == '__main__':
     # 1 - carrega dados
-    EPOCHS = 500
-    
-    mock_faces = fetch_olivetti_faces()
-    
-    X = mock_faces.data
-    y = mock_faces.target
+    EPOCHS = 100
+    BATCH_SIZE = 64
+    # Se foi passado um diretório de features, carregar a partir dele
+    if args.features_dir:
+        identity_file = args.identity_file
+        if not _os.path.exists(identity_file):
+            raise FileNotFoundError(f"Arquivo de identidade não encontrado: {identity_file}")
 
-    # 2 - converte rótulos com one-hot-encoding
-    N = X.shape[0]
-    X = X.reshape(N, -1) # reshape -> (N, channels * height * width)
-    
-    num_classes=len(np.unique(mock_faces.target))
-    num_features = X.shape[-1]
+        id_df = _load_identity(identity_file)
+        X_raw, y_raw, image_names = _load_features_and_labels_from_dir(args.features_dir, id_df)
 
-    y = one_hot_encoding(y, num_classes)
-    
-    # 2.1 - normaliza imagens
-    X /= 255
-    
-    # 3 - divide em partição de treino/teste
-    X_train, y_train, X_test, y_test = split_train_test(X, y, rate=0.9)
-    
-    print('Train set shapes', X_train.shape, y_train.shape)
-    print('Test set shapes', X_test.shape, y_test.shape)
+        # Mapear ids (podem ser valores como 2937) para rótulos 0..K-1
+        unique_ids = _np.unique(y_raw)
+        id_to_label = {int(v): i for i, v in enumerate(unique_ids)}
+        y_idx = _np.array([id_to_label[int(v)] for v in y_raw], dtype=int)
+
+        # Filtrar para apenas as top N classes com mais amostras
+        num_classes_target = args.num_classes
+        if num_classes_target > 0 and num_classes_target < len(unique_ids):
+            # contar amostras por classe
+            class_counts = _np.bincount(y_idx)
+            # selecionar top N classes
+            top_classes = _np.argsort(class_counts)[-num_classes_target:][::-1]
+            
+            # filtrar amostras
+            mask = _np.isin(y_idx, top_classes)
+            X_raw = X_raw[mask]
+            y_idx = y_idx[mask]
+            
+            # remapear índices
+            id_to_label = {int(v): i for i, v in enumerate(top_classes)}
+            y_idx = _np.array([id_to_label[int(v)] for v in y_idx], dtype=int)
+            
+            print(f'Selecionadas top {num_classes_target} classes com mais amostras. Total: {len(y_idx)} amostras em {num_classes_target} classes.')
+
+        num_classes = len(_np.unique(y_idx))
+        num_features = X_raw.shape[1]
+
+        # Converter para one-hot para treinar
+        y = one_hot_encoding(y_idx, num_classes)
+        X = X_raw.astype(float)
+
+        # dividir em treino/teste COM ESTRATIFICAÇÃO
+        X_train, y_train, X_test, y_test = stratified_split(X, y, train_size=0.9)
+        print('Train set shapes', X_train.shape, y_train.shape)
+        print('Test set shapes', X_test.shape, y_test.shape)
+    else:
+        # fallback original: dataset de exemplo
+        mock_faces = fetch_olivetti_faces()
+        X = mock_faces.data
+        y_idx = mock_faces.target
+        # 2 - converte rótulos com one-hot-encoding
+        N = X.shape[0]
+        X = X.reshape(N, -1) # reshape -> (N, channels * height * width)
+        num_classes=len(_np.unique(y_idx))
+        num_features = X.shape[-1]
+        y = one_hot_encoding(y_idx, num_classes)
+        # 2.1 - normaliza imagens
+        X /= 255
+        # 3 - divide em partição de treino/teste
+        X_train, y_train, X_test, y_test = split_train_test(X, y, rate=0.9)
+        print('Train set shapes', X_train.shape, y_train.shape)
+        print('Test set shapes', X_test.shape, y_test.shape)
 
     # 4 - define modelo
     regularization = args.regularization
+    # exigir que o usuário escolha um modelo via --model para evitar NameError
+    if args.model is None:
+        parser.error("Argumento --model é obrigatório. Use '--model mlp' ou '--model reglog'.")
 
-    if args.model == 'mlp': 
+    if args.model == 'mlp':
         model = MLP(
             num_features=num_features,
             num_classes=num_classes,
@@ -110,14 +324,20 @@ if __name__ == '__main__':
         y_train=y_train,
         X_test=X_test,
         y_test=y_test,
-        learning_rate=1e-4,
+        learning_rate=1e-3,
         epochs=EPOCHS,
     )
 
     print('avg training loss:', np.nanmean(history_loss))
 
-    # plt.plot(range(EPOCHS), np.mean(history_loss[:, :, 0]), label='train')
-    # plt.plot(range(EPOCHS), np.mean(history_loss[:, :, 1]), label='val')
-    # plt.legend()
-    # plt.show()
+    # --- acurácia no conjunto de teste ---
+    X_test_with_bias = np.insert(X_test, 0, 1, axis=1)
+    y_pred_proba = model.predict(X_test_with_bias)
+    y_pred_idx = np.argmax(y_pred_proba, axis=1)
+    y_true_idx = np.argmax(y_test, axis=1)
+    
+    accuracy = np.mean(y_pred_idx == y_true_idx)
+    print(f"Test accuracy: {accuracy:.4f}")
+
+    # plot de perdas
     plot_kfold_losses(history_loss)
