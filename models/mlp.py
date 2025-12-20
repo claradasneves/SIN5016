@@ -1,4 +1,5 @@
 import numpy as np
+from utils.regularizations import lasso, ridge, elastic_net
 
 class MLP():
     """multi-layer perceptron"""
@@ -10,6 +11,7 @@ class MLP():
             hidden_layer_activation,
             output_layer_activation,
             cost_function,
+            regularization = None,
         ):       
         self.M = num_features
         self.H = num_neurons # qtdade de neurônios na camada escondida
@@ -25,6 +27,11 @@ class MLP():
         self.hidden_layer_activation = hidden_layer_activation
         self.output_layer_activation = output_layer_activation
         self.cost_function = cost_function
+
+        self.regularization = regularization
+
+        print(f'Instantiando MLP (regularização: {self.regularization})')
+
 
     def predict(self, X: np.array):
         """
@@ -83,6 +90,19 @@ class MLP():
             
             dEdV = grad_erro.T.dot(w_hidden) # shape: (k, N) x (N, h) -> (k, h)
             dEdW = batch_x.T.dot(Delta1) / batch_size # shape: (m, N) x (N, h) -> (m, h)
+
+            # TODO: regularização
+            if self.regularization == 'l1':
+                dEdW = lasso(self.W)
+                dEdV = lasso(self.V, bias=False)
+            
+            elif self.regularization == 'l2':
+                dEdW = ridge(self.W)
+                dEdV = ridge(self.V, bias=False)
+
+            elif self.regularization == 'elastic_net':
+                dEdW = elastic_net(self.W)
+                dEdV = elastic_net(self.V, bias=False)
             
             self.W -= alpha * dEdW # shape: (m, h) * (m, h)
             self.V -= alpha * dEdV.T # shape: (h, k) * (h, k)
