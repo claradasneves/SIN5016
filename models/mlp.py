@@ -102,7 +102,7 @@ class MLP():
 
             elif self.regularization == 'elastic_net':
                 dEdW = elastic_net(self.W)
-                dEdV = elastic_net(self.V, bias=False)
+                dEdV = elastic_net(self.V, bias=False).T
             
             self.W -= alpha * dEdW # shape: (m, h) * (m, h)
             self.V -= alpha * dEdV.T # shape: (h, k) * (h, k)
