@@ -4,7 +4,16 @@ Repositório que contém os trabalhos parciais e finais da disciplina SIN5016 - 
 Modelo para tarefa de classificação com múltiplas classes (com pelo menos 20% da base) (identificação biométrica)
 
 
-# TO-DO
+## Como rodar o código?
+No terminal execute: 
+>> `python main.py --model mlp` para rodar a MLP
+
+OU execute:
+>>`python main.py --model reglog` para a Regressão Logística
+
+
+Para adicionar Regularização, exemplo:
+>> `python main.py --model <MODELO> --regularization l1`
 
 ## Código
 - Baixar o dataset
@@ -49,9 +58,3 @@ custo (ou de erro) aplicada na saída da rede, método de inicialização dos pe
 - R03 Cada membro deve demonstrar conhecimento de todos os códigos desenvolvido
 
 ---
-## Como rodar o código?
-No terminal execute: 
-`python main.py --model mlp` para rodar a MLP
-
-OU execute:
-`python main.py --model reglog` para a Regressão Logística
