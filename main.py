@@ -10,8 +10,9 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-m', '--model', help='Escolha `mlp` para MLP ou `reglog` para Regressão Logística')
-args = parser.parse_args()
+parser.add_argument('-r', '--regularization', help='Regularização `l1`, `l2`, ou `elastic-net`')
 
+args = parser.parse_args()
 
 def plot_kfold_losses(all_folds_history):
     # 1. Padronizar o comprimento (folds podem ter parado antes devido ao 'tol')
@@ -56,7 +57,7 @@ def plot_kfold_losses(all_folds_history):
 
 if __name__ == '__main__':
     # 1 - carrega dados
-    EPOCHS = 1000
+    EPOCHS = 50
     
     mock_faces = fetch_olivetti_faces()
     
@@ -82,6 +83,8 @@ if __name__ == '__main__':
     print('Test set shapes', X_test.shape, y_test.shape)
 
     # 4 - define modelo
+    regularization = args.regularization
+
     if args.model == 'mlp': 
         model = MLP(
             num_features=num_features,
@@ -97,6 +100,7 @@ if __name__ == '__main__':
             num_features=num_features,
             num_classes=num_classes,
             cost_function=entropia_cruzada,
+            regularization=regularization,
         )
 
     # 5 - aplica .fit() do modelo
