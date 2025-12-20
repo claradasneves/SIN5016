@@ -6,23 +6,32 @@ def regularization(weights, gamma=1e-5, q=1):
     """
     return gamma * (np.abs(weights)**q).sum()
 
-def lasso(cost_function, w):
+def lasso(weights, coef=0.01):
     """
     Aplica função de custo com regularização Lasso
     """
-    return cost_function + regularization(w, q=1)
+    weights[0, :] = 0
 
-def ridge(cost_function, w):
+    return (coef * weights.shape[0]) * np.sign(weights)
+
+def ridge(weights, coef=0.01):
     """
     Aplica função de custo com regularização Ridge
     """
-    return cost_function + regularization(w, q=2)
+    weights[0, :] = 0
 
-def elastic_net(cost_function, w):
+    return (coef / weights.shape[0]) * weights
+
+def elastic_net(weights, coef=0.01):
     """
     Elastic Net
     """
-    return cost_function + regularization(w, q=1) + regularization(w, q=2)
+    weights[0, :] = 0
+
+    l1 = np.sign(weights)
+    l2 = weights
+
+    return (coef / weights.shape[0]) * (l1 + l2)
 
 def gradient_ridge(gradient_cost_function, w, gamma=0.00001):
     """
