@@ -19,6 +19,20 @@ class RegLog():
         self.cost_function = cost_function
         self.regularization=regularization
 
+    def predict(self, X: np.array):
+        """Modelo da Regressão Logística multinomial"""
+        
+        logit = X.dot(self.W)
+
+        logit_max = np.max(logit, axis=1, keepdims=True)
+        logit_estavel = logit - logit_max
+        
+        exp_logit = np.exp(logit_estavel)
+
+        exp_categorias = np.sum(exp_logit, axis=1, keepdims=True)
+        
+        return exp_logit / exp_categorias
+
     def gradient_descent(
             self,
             X, y,
@@ -60,54 +74,93 @@ class RegLog():
 
         return losses, dEdW
     
-    def predict(self, X: np.array):
-        """Modelo da Regressão Logística multinomial"""
-        
-        logit = X.dot(self.W)
 
-        logit_max = np.max(logit, axis=1, keepdims=True)
-        logit_estavel = logit - logit_max
-        
-        exp_logit = np.exp(logit_estavel)
-
-        exp_categorias = np.sum(exp_logit, axis=1, keepdims=True)
-        
-        return exp_logit / exp_categorias
-    
     def fit(
-        self,
-        X_train, y_train, X_test, y_test,
-        optimizer='GD',
-        epochs=1000, 
-        learning_rate=0.001,
-        tol=0.001,    
+            self,
+            X_train, y_train, X_test, y_test,
+            optimizer='GD',
+            epochs=1000, 
+            learning_rate=0.0001,
+            tol=0.01,
+            kfold=3,
         ):
+        """
+        Função de treino para a MLP
+        """
+        print('='*10)
+        print(f'Training classification model with {optimizer}')
 
         # Prepara dados de treino e testa com a adição do intercepto
         X_train = np.insert(X_train, 0, 1, axis=1) # bias
+
+        fold_size = X_train.shape[0] // kfold
+
+        kfold_loss_history = []
+        for fold in range(kfold):
+            print('Fold', fold+1)
+
+            # re-inicializa pesos
+            self.W = np.random.randn(*self.W.shape) * 0.001
+
+            start = fold *  fold_size
+            end = (fold + 1) * fold_size \
+                if fold != kfold - 1 else X_train.shape[0]
+
+            mask = np.ones(len(X_train), dtype=bool)
+            mask[list(range(start, end))] = False
+
+            # seleciona partição de treino no KFold
+            xtrain = X_train[mask]
+            ytrain = y_train[mask]
+
+            # seleciona partição de validação no KFold
+            xval = X_train[start : end]
+            yval = y_train[start : end]
+
+            history_loss = []
+            for epoch in range(epochs):
+            
+                if optimizer == 'GD':
+                    loss, dEdW = self.gradient_descent(
+                        X=xtrain, y=ytrain,
+                        alpha=learning_rate,
+                    )
+
+                elif optimizer == 'newton':
+                    # TODO
+                    pass
+                elif optimizer == 'bfgs':
+                    # TODO
+                    pass
+                elif optimizer == 'polak-ribiere':
+                    # TODO
+                    pass
+                elif optimizer == 'fletcher-reeves':
+                    # TODO
+                    pass
+
+                # Avaliação Final
+                y_pred = self.predict(xval)
+
+                val_loss = self.cost_function(yval, y_pred)
+
+                # Verifica a convergência baseado na norma dos gradientes
+                if np.linalg.norm(dEdW) < tol: 
+                    print(f'Convergência atingida no Gradiente | Época {epoch}')
+                    break
+
+                # print(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val loss {val_loss}')
+                
+                history_loss.append([np.mean(loss), val_loss])
+            
+            kfold_loss_history.append(history_loss)
+        
+        # avalia erro no conjunto de teste - nunca visto
         X_test = np.insert(X_test, 0, 1, axis=1)
+        y_pred = self.predict(X_test)
+        test_loss = self.cost_function(y_test, y_pred)
 
-        history_loss = []
-        for epoch in range(epochs):
-
-            if optimizer == 'GD':
-                loss, dEdW = self.gradient_descent(
-                    X=X_train, 
-                    y=y_train,
-                    alpha=learning_rate,
-                )
-
-            # Avaliação Final
-            y_pred_val = self.predict(X_test)
-
-            val_loss = self.cost_function(y_test, y_pred_val)
-            history_loss.append([np.mean(loss), val_loss])
-
-            if np.linalg.norm(dEdW) < tol: break
-
-            print(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val loss {val_loss}')
-
-        history_loss = np.array(history_loss)
-
-        return history_loss
+        print('test loss:', test_loss)
+        
+        return kfold_loss_history
     
