@@ -12,6 +12,48 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--model', help='Escolha `mlp` para MLP ou `reglog` para Regressão Logística')
 args = parser.parse_args()
 
+
+def plot_kfold_losses(all_folds_history):
+    # 1. Padronizar o comprimento (folds podem ter parado antes devido ao 'tol')
+    # Encontramos o número máximo de épocas executadas
+    max_epochs = max(len(fold) for fold in all_folds_history)
+    
+    # Criamos matrizes preenchidas com NaN para acomodar tamanhos diferentes
+    train_losses = np.full((len(all_folds_history), max_epochs), np.nan)
+    val_losses = np.full((len(all_folds_history), max_epochs), np.nan)
+
+    for i, fold in enumerate(all_folds_history):
+        fold_arr = np.array(fold)
+        train_losses[i, :len(fold)] = fold_arr[:, 0]
+        val_losses[i, :len(fold)] = fold_arr[:, 1]
+
+    # 2. Calcular a média ignorando os NaNs (onde os folds já tinham convergido)
+    mean_train = np.nanmean(train_losses, axis=0)
+    mean_val = np.nanmean(val_losses, axis=0)
+    
+    # 3. Calcular o Desvio Padrão (para mostrar a variabilidade entre folds)
+    std_train = np.nanstd(train_losses, axis=0)
+    std_val = np.nanstd(val_losses, axis=0)
+
+    epochs_range = np.arange(max_epochs)
+
+    plt.figure(figsize=(10, 6))
+
+    # Plot Treino
+    plt.plot(epochs_range, mean_train, label='Treino (Média)', color='blue', lw=2)
+    plt.fill_between(epochs_range, mean_train - std_train, mean_train + std_train, color='blue', alpha=0.2)
+
+    # Plot Validação
+    plt.plot(epochs_range, mean_val, label='Validação (Média)', color='red', lw=2)
+    plt.fill_between(epochs_range, mean_val - std_val, mean_val + std_val, color='red', alpha=0.2)
+
+    plt.xlabel('Épocas')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.show()
+
+
 if __name__ == '__main__':
     # 1 - carrega dados
     EPOCHS = 1000
@@ -69,8 +111,8 @@ if __name__ == '__main__':
 
     print('avg training loss:', np.mean(history_loss))
 
-    plt.plot(range(EPOCHS), history_loss[:, 0], label='train')
-    plt.plot(range(EPOCHS), history_loss[:, 1], label='val')
-    plt.legend()
-    plt.show()
-
+    # plt.plot(range(EPOCHS), np.mean(history_loss[:, :, 0]), label='train')
+    # plt.plot(range(EPOCHS), np.mean(history_loss[:, :, 1]), label='val')
+    # plt.legend()
+    # plt.show()
+    plot_kfold_losses(history_loss)
