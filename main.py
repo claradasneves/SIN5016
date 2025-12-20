@@ -57,7 +57,7 @@ def plot_kfold_losses(all_folds_history):
 
 if __name__ == '__main__':
     # 1 - carrega dados
-    EPOCHS = 50
+    EPOCHS = 500
     
     mock_faces = fetch_olivetti_faces()
     
@@ -93,6 +93,7 @@ if __name__ == '__main__':
             hidden_layer_activation=tanh,
             output_layer_activation=softmax,
             cost_function=entropia_cruzada,
+            regularization=regularization,
         )
 
     elif args.model == 'reglog':
@@ -113,7 +114,7 @@ if __name__ == '__main__':
         epochs=EPOCHS,
     )
 
-    print('avg training loss:', np.mean(history_loss))
+    print('avg training loss:', np.nanmean(history_loss))
 
     # plt.plot(range(EPOCHS), np.mean(history_loss[:, :, 0]), label='train')
     # plt.plot(range(EPOCHS), np.mean(history_loss[:, :, 1]), label='val')
