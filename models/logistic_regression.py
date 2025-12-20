@@ -1,5 +1,5 @@
 import numpy as np
-
+from utils.regularizations import lasso, ridge, elastic_net
 
 class RegLog():
     """ regressão logística"""
@@ -17,7 +17,9 @@ class RegLog():
         self.W = np.insert(W, 0, 1, axis=0) # add bias
 
         self.cost_function = cost_function
-        self.regularization=regularization
+        self.regularization = regularization
+
+        print(f'Instantiando Regressão Logística Multinomial (regularização: {self.regularization})')
 
     def predict(self, X: np.array):
         """Modelo da Regressão Logística multinomial"""
@@ -66,7 +68,12 @@ class RegLog():
             # shape: (N, m).T -> (m, N) x (N, k) -> (m, k)
             dEdW = batch_x.T.dot(y_pred - batch_y) / batch_size
 
-            # TODO regularization
+            if self.regularization == 'l1':
+                dEdW += lasso(self.W)
+            elif self.regularization == 'l2':
+                dEdW += ridge(self.W)
+            elif self.regularization == 'elastic_net':
+                dEdW += elastic_net(self.W)
             
             self.W -= alpha * dEdW
         
