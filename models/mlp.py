@@ -91,14 +91,15 @@ class MLP():
             dEdV = grad_erro.T.dot(w_hidden) # shape: (k, N) x (N, h) -> (k, h)
             dEdW = batch_x.T.dot(Delta1) / batch_size # shape: (m, N) x (N, h) -> (m, h)
 
-            # TODO: regularização
+            # Aplica regularização
             if self.regularization == 'l1':
+                # TODO: consertar instabilidade (serrote)
                 dEdW = lasso(self.W)
-                dEdV = lasso(self.V, bias=False)
+                dEdV = lasso(self.V, bias=False).T
             
             elif self.regularization == 'l2':
                 dEdW = ridge(self.W)
-                dEdV = ridge(self.V, bias=False)
+                dEdV = ridge(self.V, bias=False).T
 
             elif self.regularization == 'elastic_net':
                 dEdW = elastic_net(self.W)
@@ -183,9 +184,10 @@ class MLP():
                 val_loss = self.cost_function(yval, y_pred)
 
                 # Verifica a convergência baseado na norma dos gradientes
-                if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
-                    print(f'Convergência atingida no Gradiente | Época {epoch}')
-                    break
+                """ TODO: consertar parada antecipada """
+                # if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
+                #     print(f'Convergência atingida no Gradiente | Época {epoch}')
+                #     break
 
                 # print(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val loss {val_loss}')
                 
