@@ -224,12 +224,17 @@ class MLP():
             yval = y_train[start : end]
 
             history_loss = []
+            
             best_val_loss = float('inf')
             patience = 5  # parar se validação não melhorar por 10 épocas
             patience_counter = 0
+            best_weights = {
+                'W': self.W[:], 
+                'V': self.V[:],
+            }
             
             for epoch in tqdm(range(epochs)):
-           
+
                 if optimizer == 'GD':
                     loss, dEdW, dEdV = self.gradient_descent(
                         X=xtrain, y=ytrain,
@@ -263,10 +268,20 @@ class MLP():
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     patience_counter = 0
+                    
+                    # salva melhores pesos
+                    best_weights['W'] = self.W[:]
+                    best_weights['V'] = self.V[:]
+
                 else:
                     patience_counter += 1
                     if patience_counter >= patience:
                         print(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
+                        
+                        # recupera melhores pesos antes de sair
+                        self.W = best_weights['W']
+                        self.V = best_weights['V']
+                        
                         break
 
                 # Critério de convergência: verifica a convergência baseado na norma dos gradientes
