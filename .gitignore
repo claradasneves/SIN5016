@@ -1,5 +1,7 @@
 .env
 .venv/
+*.DS_Store
+*.npy
 *__pycache__
 data/*.csv
 data/selected_images/
