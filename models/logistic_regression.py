@@ -13,8 +13,7 @@ class RegLog():
         self.M = num_features
         self.K = num_classes
 
-        W = np.random.randn(self.M, self.K)
-        self.W = np.insert(W, 0, 1, axis=0) # add bias
+        self.W = np.random.randn(self.M, self.K)
 
         self.cost_function = cost_function
         self.regularization = regularization
@@ -70,8 +69,10 @@ class RegLog():
 
             if self.regularization == 'l1':
                 dEdW += lasso(self.W)
+            
             elif self.regularization == 'l2':
                 dEdW += ridge(self.W)
+            
             elif self.regularization == 'elastic_net':
                 dEdW += elastic_net(self.W)
             
@@ -96,9 +97,6 @@ class RegLog():
         """
         print('='*10)
         print(f'Training classification model with {optimizer}')
-
-        # Prepara dados de treino e testa com a adição do intercepto
-        X_train = np.insert(X_train, 0, 1, axis=1) # bias
 
         fold_size = X_train.shape[0] // kfold
 
@@ -131,7 +129,7 @@ class RegLog():
             
             for epoch in range(epochs):
             
-                if optimizer == 'GD':
+                if optimizer == 'gd':
                     loss, dEdW = self.gradient_descent(
                         X=xtrain, y=ytrain,
                         alpha=learning_rate,
@@ -177,7 +175,6 @@ class RegLog():
             kfold_loss_history.append(history_loss)
         
         # avalia erro no conjunto de teste - nunca visto
-        X_test = np.insert(X_test, 0, 1, axis=1)
         y_pred = self.predict(X_test)
         test_loss = self.cost_function(y_test, y_pred)
 
