@@ -30,6 +30,18 @@ Arquivo .txt que faz o mapeamento entre imagem e identidade (pessoa).
 Número de classes (pessoas) a serem utilizadas. Por padrão, são selecionadas as classes com mais amostras.
 >> `python main.py --model mlp --num-classes 300`
 
+--use-attributes
+Ativa o uso dos atributos semânticos do CelebA como features adicionais ao modelo.
+Quando habilitado, os atributos binários (ex.: Smiling, Eyeglasses, Male, etc.) são concatenados às features extraídas por HOG, formando um vetor de características mais rico.
+Esse argumento é opcional. Caso não seja especificado, o modelo utiliza apenas as features HOG extraídas das imagens.
+>> `python main.py --model mlp --num-classes 50 --use-atributes`
+
+--attr-file
+Especifica o caminho para o arquivo CSV contendo os atributos do dataset CelebA.
+Esse arquivo é utilizado somente se o argumento --use-attributes estiver ativado.
+Por padrão, o caminho aponta para o arquivo oficial de atributos do CelebA previamente organizado no diretório do projeto.
+>> `python main.py --model mlp --num-classes 50 --use-attributes --attr-file data/atributos/list_attr_celeba.csv`
+
 ## Código
 - Baixar o dataset
 - Aplicar HOG (gera um histograma de orientações de cada pixel) nos dados (podemos escolher outro descritor, como  LPB (Local Pattern Binary) ou Transformada Wavelet) -> no caso de usar mais descritores, gerar outro modelo
