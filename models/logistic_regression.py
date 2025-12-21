@@ -68,13 +68,13 @@ class RegLog():
             dEdW = batch_x.T.dot(y_pred - batch_y) / batch_size
 
             if self.regularization == 'l1':
-                dEdW += lasso(self.W)
+                dEdW += lasso(self.W, bias=False)
             
             elif self.regularization == 'l2':
-                dEdW += ridge(self.W)
+                dEdW += ridge(self.W, bias=False)
             
             elif self.regularization == 'elastic_net':
-                dEdW += elastic_net(self.W)
+                dEdW += elastic_net(self.W, bias=False)
             
             self.W -= alpha * dEdW
         
