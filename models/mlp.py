@@ -101,10 +101,8 @@ class MLP():
                 dEdV += lasso(self.V, bias=False)
             
             elif self.regularization == 'l2':
-                regW = ridge(self.W)
-                regW[0, :] = 0.0   # para nao regularizar bias
-                dEdW += regW
-                dEdV += ridge(self.V)
+                dEdW += ridge(self.W)
+                dEdV += ridge(self.V, bias=False)
 
             elif self.regularization == 'elastic_net':
                 dEdW += elastic_net(self.W)

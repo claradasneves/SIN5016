@@ -19,12 +19,10 @@ def ridge(weights, coef=0.1, bias=True):
     """
     Aplica função de custo com regularização Ridge
     """
-    reg = (coef / weights.shape[0]) * weights.copy()
-
     if bias:
-        reg[0, :] = 0.0  # não regulariza bias
+        weights[0, :] = 0.0  # não regulariza bias
 
-    return reg
+    return (coef / weights.shape[0]) * weights.copy()
 
 def elastic_net(weights, coef=0.01, bias=True):
     """
