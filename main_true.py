@@ -2,7 +2,7 @@ import numpy as np
 from models import MLP, RegLog
 from utils.activations import tanh, softmax
 from utils.data_processing import one_hot_encoding, split_train_test
-from utils.loss_functions import entropia_cruzada, categorical_cross_entropy
+from utils.loss_functions import entropia_cruzada
 from sklearn.datasets import fetch_olivetti_faces
 import matplotlib.pyplot as plt
 import argparse
