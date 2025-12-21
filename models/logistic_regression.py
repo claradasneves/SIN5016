@@ -39,7 +39,7 @@ class RegLog():
             self,
             X, y,
             alpha=0.001,
-            batch_size=16,
+            batch_size=64,
         ):
         """"
         Args:
@@ -125,6 +125,10 @@ class RegLog():
             yval = y_train[start : end]
 
             history_loss = []
+            best_val_loss = float('inf')
+            patience = 100  # parar se validação não melhorar por 10 épocas
+            patience_counter = 0
+            
             for epoch in range(epochs):
             
                 if optimizer == 'GD':
@@ -150,6 +154,16 @@ class RegLog():
                 y_pred = self.predict(xval)
 
                 val_loss = self.cost_function(yval, y_pred)
+
+                # Early stopping: parar se validação não melhorar
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
+                    if patience_counter >= patience:
+                        print(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
+                        break
 
                 # Verifica a convergência baseado na norma dos gradientes
                 if np.linalg.norm(dEdW) < tol: 
