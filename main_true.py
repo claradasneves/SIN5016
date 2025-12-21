@@ -10,6 +10,8 @@ import numpy as _np
 import os as _os
 import glob as _glob
 from tqdm import tqdm
+import time
+import pandas as pd
 
 parser = argparse.ArgumentParser()
 
@@ -268,20 +270,23 @@ def normalize_features(X):
 
 def add_attributes(X, y, image_names, attr_file):
     print('loading attributes...')
+
     attr_df, attr_cols = _load_attributes(attr_file)
 
-    A_list = []
-    valid_idx = []
+    # cria Series com nomes das imagens e seus índices originais
+    img_series = pd.Series(np.arange(len(image_names)), index=image_names)
 
-    for i, img in tqdm(enumerate(image_names)):
-        if img in attr_df.index:
-            A_list.append(attr_df.loc[img, attr_cols].values)
-            valid_idx.append(i)
+    # interseção entre imagens e atributos
+    common_imgs = img_series.index.intersection(attr_df.index)
 
-    if not A_list:
+    if len(common_imgs) == 0:
         raise RuntimeError('Nenhum atributo pôde ser alinhado com as imagens.')
 
-    A = np.vstack(A_list)
+    # índices válidos em X e y
+    valid_idx = img_series.loc[common_imgs].values
+
+    # atributos alinhados
+    A = attr_df.loc[common_imgs, attr_cols].to_numpy()
 
     X = X[valid_idx]
     y = y[valid_idx]
