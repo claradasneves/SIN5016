@@ -192,22 +192,22 @@ class MLP():
 
                 val_loss = self.cost_function(yval, y_pred)
 
-                # Early stopping: parar se validação não melhorar
-                if val_loss < best_val_loss:
-                    best_val_loss = val_loss
-                    patience_counter = 0
-                else:
-                    patience_counter += 1
-                    if patience_counter >= patience:
-                        print(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
-                        break
+                # # Early stopping: parar se validação não melhorar
+                # if val_loss < best_val_loss:
+                #     best_val_loss = val_loss
+                #     patience_counter = 0
+                # else:
+                #     patience_counter += 1
+                #     if patience_counter >= patience:
+                #         print(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
+                #         break
 
-                # Verifica a convergência baseado na norma dos gradientes
+                # Early stopping: verifica a convergência baseado na norma dos gradientes
                 if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
                     print(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
                     break
 
-                tqdm.write(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val loss {val_loss}')
+                tqdm.write(f'epoch {epoch}:\tAvg training loss (GD)={np.mean(loss)}\t|\t\tval loss {val_loss}')
                 
                 history_loss.append([np.mean(loss), val_loss])
             
