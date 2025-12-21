@@ -19,10 +19,10 @@ class MLP():
         self.K = num_classes # qtdade de classes para predição
 
         # W: matriz com pesos da camada de entrada
-        self.W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
+        self.W = np.random.randn(self.M, self.H) * 0.001 # shape: (M, H)
         
         # V: matriz com pesos da camada de saida
-        self.V = np.random.randn(self.H, self.K) * 0.01 # shape: (H, K)
+        self.V = np.random.randn(self.H, self.K) * 0.001 # shape: (H, K)
 
         self.hidden_layer_activation = hidden_layer_activation
         self.output_layer_activation = output_layer_activation
@@ -59,7 +59,14 @@ class MLP():
             X, y,
             alpha=0.001,
             batch_size=32,
+            stochastic=True
         ):
+
+        # Aplica SGD (gradiente descendente estocástico)
+        if stochastic:
+            idx = np.random.permutation(X.shape[0])
+            X = X[idx]
+            y = y[idx]
                     
         N = X.shape[0]
         losses = []
@@ -135,8 +142,8 @@ class MLP():
             print('Fold', fold+1)
 
             # re-inicializa pesos
-            self.W = np.random.randn(*self.W.shape) * 0.01
-            self.V = np.random.randn(*self.V.shape) * 0.01
+            self.W = np.random.randn(*self.W.shape) * 0.001
+            self.V = np.random.randn(*self.V.shape) * 0.001
 
             start = fold *  fold_size
             end = (fold + 1) * fold_size \
@@ -159,7 +166,7 @@ class MLP():
             patience_counter = 0
             
             for epoch in tqdm(range(epochs)):
-            
+           
                 if optimizer == 'GD':
                     loss, dEdW, dEdV = self.gradient_descent(
                         X=xtrain, y=ytrain,
