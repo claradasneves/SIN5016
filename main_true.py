@@ -280,6 +280,7 @@ def add_attributes(X, y, image_names, attr_file):
     return X, y
 
 def remap_and_filter_classes(X, y_raw, num_classes_target):
+    print('remapping and filtering...')
     # mapear ids originais → labels 0..K-1
     unique_ids = np.unique(y_raw)
     id_to_label = {int(v): i for i, v in enumerate(unique_ids)}
