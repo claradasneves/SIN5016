@@ -82,15 +82,15 @@ class MLP():
             """Backprop"""
             grad_erro = (y_pred - batch_y) # shape: (N, k)
             
-            erro_propagado = grad_erro.dot(self.V.T) # shape: (N, k) x (k, h) -> (N, h)
+            erro_propagado = grad_erro @ self.V.T # shape: (N, k) x (k, h) -> (N, h)
             
             Delta1 = \
                 erro_propagado * self.hidden_layer_activation(
                     logit, derivative=True,
                 ) # shape: (N, h) * (N, h) -> (N, h)
             
-            dEdV = hidden.T @ grad_erro / batch_size # shape: (k, N) x (N, h) -> (k, h)
-            dEdW = batch_x.T.dot(Delta1) / batch_size # shape: (m, N) x (N, h) -> (m, h)
+            dEdV = (hidden.T @ grad_erro) / batch_size # shape: (k, N) x (N, h) -> (k, h)
+            dEdW = (batch_x.T @ Delta1) / batch_size # shape: (m, N) x (N, h) -> (m, h)
 
             # Aplica regularização
             if self.regularization == 'l1':
