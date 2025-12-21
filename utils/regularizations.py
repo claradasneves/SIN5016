@@ -15,14 +15,16 @@ def lasso(weights, coef=0.01, bias=True):
 
     return (coef * weights.shape[0]) * np.sign(weights)
 
-def ridge(weights, coef=0.01, bias=True):
+def ridge(weights, coef=0.1, bias=True):
     """
     Aplica função de custo com regularização Ridge
     """
-    if bias:
-        weights[0, :] = 0
+    reg = (coef / weights.shape[0]) * weights.copy()
 
-    return (coef / weights.shape[0]) * weights
+    if bias:
+        reg[0, :] = 0.0  # não regulariza bias
+
+    return reg
 
 def elastic_net(weights, coef=0.01, bias=True):
     """
