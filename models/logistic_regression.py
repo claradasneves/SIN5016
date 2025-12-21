@@ -66,7 +66,8 @@ class RegLog():
             losses.append(loss)
 
             # shape: (N, m).T -> (m, N) x (N, k) -> (m, k)
-            dEdW = batch_x.T.dot(y_pred - batch_y) / batch_size
+            grad_erro = (y_pred - batch_y)
+            dEdW = batch_x.T @ (grad_erro) / batch_size
 
             if self.regularization == 'l1':
                 dEdW += lasso(self.W, bias=False)
