@@ -1,5 +1,6 @@
 import numpy as np
 from utils.regularizations import lasso, ridge, elastic_net
+from tqdm import tqdm
 
 class RegLog():
     """ regressão logística"""
@@ -89,7 +90,7 @@ class RegLog():
             optimizer='GD',
             epochs=1000, 
             learning_rate=0.0001,
-            tol=0.01,
+            tol=1e-3,
             kfold=3,
         ):
         """
@@ -123,28 +124,24 @@ class RegLog():
             yval = y_train[start : end]
 
             history_loss = []
+            
             best_val_loss = float('inf')
-            patience = 100  # parar se validação não melhorar por 10 épocas
+            patience = 10  # parar se validação não melhorar por 10 épocas
             patience_counter = 0
+            best_weights = {
+                'W': self.W[:], 
+            }
             
-            for epoch in range(epochs):
-            
+            for epoch in tqdm(range(epochs)):
+
                 if optimizer == 'gd':
                     loss, dEdW = self.gradient_descent(
                         X=xtrain, y=ytrain,
                         alpha=learning_rate,
+                        batch_size=32
                     )
 
                 elif optimizer == 'newton':
-                    # TODO
-                    pass
-                elif optimizer == 'bfgs':
-                    # TODO
-                    pass
-                elif optimizer == 'polak-ribiere':
-                    # TODO
-                    pass
-                elif optimizer == 'fletcher-reeves':
                     # TODO
                     pass
 
@@ -153,28 +150,39 @@ class RegLog():
 
                 val_loss = self.cost_function(yval, y_pred)
 
-                # Early stopping: parar se validação não melhorar
+                # # Early stopping: parar se validação não melhorar
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     patience_counter = 0
+                    
+                    # salva melhores pesos
+                    best_weights['W'] = self.W[:]
+
                 else:
                     patience_counter += 1
                     if patience_counter >= patience:
-                        print(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
+                        tqdm.write(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
+                        
+                        # recupera melhores pesos antes de sair
+                        self.W = best_weights['W']
+                        
                         break
 
-                # Verifica a convergência baseado na norma dos gradientes
+                # Critério de convergência: verifica a convergência baseado na norma dos gradientes
                 if np.linalg.norm(dEdW) < tol: 
-                    print(f'Convergência atingida no Gradiente | Época {epoch}')
+                    tqdm.write(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
+                    
+                    # recupera melhores pesos antes de sair
+                    self.W = best_weights['W']
+                    
                     break
 
-                # print(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val loss {val_loss}')
+                tqdm.write(f'epoch {epoch+1}:\tAvg training loss ({optimizer})={np.mean(loss)}\t|\t\tval loss {val_loss}')
                 
                 history_loss.append([np.mean(loss), val_loss])
             
             kfold_loss_history.append(history_loss)
         
-        # avalia erro no conjunto de teste - nunca visto
         y_pred = self.predict(X_test)
         test_loss = self.cost_function(y_test, y_pred)
 
