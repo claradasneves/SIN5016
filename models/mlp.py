@@ -54,6 +54,73 @@ class MLP():
 
         return self.output_layer_activation(z_hidden) # shape: (N, k)
     
+    def newton(
+            self,
+            X, y,
+            alpha=1,
+            batch_size=256,
+            stochastic=True,
+        ):
+        """
+        Método de Newton para otimização. Aplica o método de Gauss-Newton para otimizar o cálculo da hessiana
+        """                    
+        N = X.shape[0]
+        losses = []
+
+        # Aplica SGD (gradiente descendente estocástico)
+        if stochastic:
+            idx = np.random.permutation(X.shape[0])
+            X = X[idx]
+            y = y[idx]
+
+        for idx in range(0, N, batch_size):
+
+            batch_x = X[idx:idx+batch_size]
+            batch_y = y[idx:idx+batch_size]
+        
+            """Forward pass"""
+            logit = batch_x @ self.W                      # (N, H)
+            hidden = self.hidden_layer_activation(logit) # (N, H)
+
+            scores = hidden @ self.V                     # (N, K)
+            y_pred = self.output_layer_activation(scores)
+            
+            loss = self.cost_function(batch_y, y_pred) # shape: (N, k)
+            losses.append(loss)
+
+            """Backprop"""
+            grad_erro = (y_pred - batch_y) # shape: (N, k)
+            
+            erro_propagado = grad_erro @ self.V.T # shape: (N, k) x (k, h) -> (N, h)
+            
+            Delta1 = \
+                erro_propagado * self.hidden_layer_activation(
+                    logit, derivative=True,
+                ) # shape: (N, h) * (N, h) -> (N, h)
+            
+            dEdV = (hidden.T @ grad_erro) / batch_size # shape: (k, N) x (N, h) -> (k, h)
+            dEdW = (batch_x.T @ Delta1) / batch_size # shape: (m, N) x (N, h) -> (m, h)
+
+            """ cálculo das hessianas """
+            _weights = y_pred * (1 - y_pred) # shape: (N, K)
+
+            classes_avg = np.mean(_weights, axis=1) # (N, K)
+
+            Hv = (hidden.T * classes_avg) @ hidden / batch_size # ()
+            Hv += np.eye(self.H) * 1e-3 # regulariza a hessiana de V
+
+            # aproximação pela diag principal
+            # Hw = (batch_x.T @ batch_x) / batch_size # shape: (M, N) x (N, M) -> (M, M)
+            # Hw += np.eye(self.M) * 1e-3 # regulariza a hessiana de W
+
+            """ considera método de Gauss-Newton. Atualizando via hessiana somente a última camada"""
+            self.W -= 1e-3 * dEdW # shape: (M, M) * (M, H) -> (M, H)
+            self.V -= alpha * np.linalg.solve(Hv, dEdV) # shape: (h, k) * (h, k)
+                    
+        losses = np.array(losses)
+
+        return losses, dEdW, dEdV
+
     def gradient_descent(
             self,
             X, y,
@@ -123,10 +190,10 @@ class MLP():
     def fit(
             self,
             X_train, y_train, X_test, y_test,
-            optimizer='GD',
+            optimizer='newton',
             epochs=1000, 
             learning_rate=1e-3,
-            tol=1e-2,
+            tol=1e-3,
             kfold=3,
         ):
         """
@@ -175,8 +242,12 @@ class MLP():
                     )
 
                 elif optimizer == 'newton':
-                    # TODO
-                    pass
+                    loss, dEdW, dEdV = self.newton(
+                        X=xtrain, y=ytrain,
+                        alpha=learning_rate,
+                        batch_size=32,
+                    )
+
                 elif optimizer == 'bfgs':
                     # TODO
                     pass
@@ -192,22 +263,22 @@ class MLP():
 
                 val_loss = self.cost_function(yval, y_pred)
 
-                # # Early stopping: parar se validação não melhorar
-                # if val_loss < best_val_loss:
-                #     best_val_loss = val_loss
-                #     patience_counter = 0
-                # else:
-                #     patience_counter += 1
-                #     if patience_counter >= patience:
-                #         print(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
-                #         break
+                # Early stopping: parar se validação não melhorar
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
+                    if patience_counter >= patience:
+                        print(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
+                        break
 
-                # Early stopping: verifica a convergência baseado na norma dos gradientes
-                if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
-                    print(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
-                    break
+                # # Early stopping: verifica a convergência baseado na norma dos gradientes
+                # if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
+                #     print(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
+                #     break
 
-                tqdm.write(f'epoch {epoch}:\tAvg training loss (GD)={np.mean(loss)}\t|\t\tval loss {val_loss}')
+                tqdm.write(f'epoch {epoch+1}:\tAvg training loss ({optimizer})={np.mean(loss)}\t|\t\tval loss {val_loss}')
                 
                 history_loss.append([np.mean(loss), val_loss])
             
