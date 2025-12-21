@@ -13,17 +13,32 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-m', '--model', help='Escolha `mlp` para MLP ou `reglog` para Regressão Logística')
-parser.add_argument('-r', '--regularization', help='Regularização `l1`, `l2`, ou `elastic-net`')
-parser.add_argument('--features-dir', default=None,
+parser.add_argument('-m', 
+                    '--model', 
+                    help='Escolha `mlp` para MLP ou `reglog` para Regressão Logística')
+parser.add_argument('-r', 
+                    '--regularization', 
+                    default='l2',
+                    help='Regularização `l1`, `l2`, ou `elastic-net`')
+parser.add_argument('-o', 
+                    '--optimizer', 
+                    default='gd',
+                    help='Otimização `gd` para Gradiente Descendente ou `newton` para Gauss-Newton')
+parser.add_argument('--features-dir', 
+                    default=None,
                     help='Pasta contendo features HOG (.npy por imagem) ou contendo um único arquivo .npy com features (necessita mapping). Ex: hog_features_2025...')
-parser.add_argument('--identity-file', default=_os.path.join('data', 'atributos', 'identity_CelebA.txt'),
+parser.add_argument('--identity-file', 
+                    default=_os.path.join('data', 'atributos', 'identity_CelebA.txt'),
                     help='Arquivo txt com mapeamento imagem -> id (padrão: data/atributos/identity_CelebA.txt)')
-parser.add_argument('--num-classes', type=int, default=500,
+parser.add_argument('--num-classes', 
+                    type=int, 
+                    default=500,
                     help='Número de classes (pessoas) a selecionar. Serão selecionadas as classes com mais amostras. Use 0 para incluir todas (padrão: 500).')
-parser.add_argument('--use-attributes', action='store_true',
+parser.add_argument('--use-attributes', 
+                    action='store_true',
                     help='Se ativado, concatena atributos do CelebA às features HOG')
-parser.add_argument('--attr-file', default=_os.path.join('data', 'atributos', 'list_attr_celeba.csv'),
+parser.add_argument('--attr-file', 
+                    default=_os.path.join('data', 'atributos', 'list_attr_celeba.csv'),
                     help='CSV com atributos do CelebA (usado apenas se --use-attributes)')
 
 
@@ -173,7 +188,6 @@ def _load_features_and_labels_from_dir(features_dir: str, identity_df):
 
         raise RuntimeError('Não foi possível inferir mapeamento entre features e identity file. Forneça um diretório com .npy por imagem nomeados ou um arquivo de mapping.')
 
-
 def stratified_split(X, y, train_size=0.9):
     """Divide X e y mantendo a proporção de classes em ambos conjuntos (estratificação).
     
@@ -207,7 +221,6 @@ def stratified_split(X, y, train_size=0.9):
     test_idx = _np.array(test_idx)
     
     return X[train_idx], y[train_idx], X[test_idx], y[test_idx]
-
 
 def plot_kfold_losses(all_folds_history):
     # 1. Padronizar o comprimento (folds podem ter parado antes devido ao 'tol')
@@ -341,7 +354,6 @@ def load_celeba_dataset(args):
 
     return X.astype(float), y, X.shape[1], num_classes
 
-
 def load_dataset(args):
     if args.features_dir:
         return load_celeba_dataset(args)
@@ -411,6 +423,7 @@ def main(args):
         y_test=y_test,
         learning_rate=1e-1,
         epochs=EPOCHS,
+        optimizer=args.optimizer,
     )
 
     # 5 - avaliação
