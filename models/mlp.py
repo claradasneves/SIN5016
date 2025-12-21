@@ -57,7 +57,7 @@ class MLP():
     def newton(
             self,
             X, y,
-            alpha=1,
+            alpha=1e-3,
             batch_size=32,
             stochastic=True,
         ):
@@ -245,7 +245,7 @@ class MLP():
                 elif optimizer == 'newton':
                     loss, dEdW, dEdV = self.newton(
                         X=xtrain, y=ytrain,
-                        alpha=learning_rate,
+                        alpha=1.0,
                         batch_size=256,
                     )
 
