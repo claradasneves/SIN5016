@@ -42,6 +42,9 @@ Esse arquivo é utilizado somente se o argumento --use-attributes estiver ativad
 Por padrão, o caminho aponta para o arquivo oficial de atributos do CelebA previamente organizado no diretório do projeto.
 >> `python main.py --model mlp --num-classes 50 --use-attributes --attr-file data/atributos/list_attr_celeba.csv`
 
+## EXEMPLO 
+>> `python main_true.py --features-dir {abs_path_features_hog} --model mlp -r l2 --num-classes 50 --use-attributes --attr-file {abs_path_attr}`
+
 ## Código
 - Baixar o dataset
 - Aplicar HOG (gera um histograma de orientações de cada pixel) nos dados (podemos escolher outro descritor, como  LPB (Local Pattern Binary) ou Transformada Wavelet) -> no caso de usar mais descritores, gerar outro modelo
