@@ -372,8 +372,8 @@ def build_model(args, num_features, num_classes):
         )
 
 def evaluate_model(model, X_test, y_test):
-    X_test_bias = np.insert(X_test, 0, 1, axis=1)
-    y_pred = model.predict(X_test_bias)
+    # X_test_bias = np.insert(X_test, 0, 1, axis=1)
+    y_pred = model.predict(X_test)
 
     acc = np.mean(
         np.argmax(y_pred, axis=1) == np.argmax(y_test, axis=1)
