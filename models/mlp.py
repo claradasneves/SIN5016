@@ -165,15 +165,15 @@ class MLP():
             # Aplica regularização
             if self.regularization == 'l1':
                 # TODO: consertar instabilidade (serrote)
-                dEdW += lasso(self.W)
+                dEdW += lasso(self.W, bias=False)
                 dEdV += lasso(self.V, bias=False)
             
             elif self.regularization == 'l2':
-                dEdW += ridge(self.W)
+                dEdW += ridge(self.W, bias=False)
                 dEdV += ridge(self.V, bias=False)
 
             elif self.regularization == 'elastic_net':
-                dEdW += elastic_net(self.W)
+                dEdW += elastic_net(self.W, bias=False)
                 dEdV += elastic_net(self.V, bias=False)
             
             self.W -= alpha * dEdW # shape: (m, h) * (m, h)
@@ -235,7 +235,7 @@ class MLP():
             
             for epoch in tqdm(range(epochs)):
 
-                if optimizer == 'GD':
+                if optimizer == 'gd':
                     loss, dEdW, dEdV = self.gradient_descent(
                         X=xtrain, y=ytrain,
                         alpha=learning_rate,
