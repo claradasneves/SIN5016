@@ -226,7 +226,7 @@ class MLP():
             history_loss = []
             
             best_val_loss = float('inf')
-            patience = 5  # parar se validação não melhorar por 10 épocas
+            patience = 10  # parar se validação não melhorar por 10 épocas
             patience_counter = 0
             best_weights = {
                 'W': self.W[:], 
@@ -249,16 +249,6 @@ class MLP():
                         batch_size=256,
                     )
 
-                elif optimizer == 'bfgs':
-                    # TODO
-                    pass
-                elif optimizer == 'polak-ribiere':
-                    # TODO
-                    pass
-                elif optimizer == 'fletcher-reeves':
-                    # TODO
-                    pass
-
                 # Avaliação Final
                 y_pred = self.predict(xval)
 
@@ -276,7 +266,7 @@ class MLP():
                 else:
                     patience_counter += 1
                     if patience_counter >= patience:
-                        print(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
+                        tqdm.write(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
                         
                         # recupera melhores pesos antes de sair
                         self.W = best_weights['W']
@@ -286,7 +276,7 @@ class MLP():
 
                 # Critério de convergência: verifica a convergência baseado na norma dos gradientes
                 if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
-                    print(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
+                    tqdm.write(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
                     
                     # recupera melhores pesos antes de sair
                     self.W = best_weights['W']
