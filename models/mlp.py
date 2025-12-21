@@ -19,8 +19,8 @@ class MLP():
         self.K = num_classes # qtdade de classes para predição
 
         # W: matriz com pesos da camada de entrada
-        W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
-        self.W = np.insert(W, 0, 0, axis=0) # add bias | shape: (M+1, H)
+        self.W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
+        # self.W = np.insert(W, 0, 0, axis=0) # add bias | shape: (M+1, H)
         # self.W = np.zeros((self.M + 1, self.H))
         # self.W[1:, :] = np.random.randn(self.M, self.H) * 0.01
         
@@ -132,8 +132,8 @@ class MLP():
         print(f'Training classification model with {optimizer}')
 
         # Prepara dados de treino e testa com a adição do intercepto
-        X_train = np.insert(X_train, 0, 1, axis=1) # bias
-        X_test = np.insert(X_test, 0, 1, axis=1)
+        # X_train = np.insert(X_train, 0, 1, axis=1) # bias
+        # X_test = np.insert(X_test, 0, 1, axis=1)
 
         fold_size = X_train.shape[0] // kfold
 
@@ -144,7 +144,7 @@ class MLP():
             # re-inicializa pesos
             self.W = np.random.randn(*self.W.shape) * 0.01
             # self.W[1:, :] = np.random.randn(self.W.shape[0]-1, self.W.shape[1]) * 0.01
-            self.W[0, :] = 0.0
+            # self.W[0, :] = 0.0
             self.V = np.random.randn(*self.V.shape) * 0.01
 
             start = fold *  fold_size
