@@ -18,8 +18,10 @@ class MLP():
         self.K = num_classes # qtdade de classes para predição
 
         # W: matriz com pesos da camada de entrada
-        W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
-        self.W = np.insert(W, 0, 1, axis=0) # add bias | shape: (M+1, H)
+        # W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
+        # self.W = np.insert(W, 0, 1, axis=0) # add bias | shape: (M+1, H)
+        self.W = np.zeros((self.M + 1, self.H))
+        self.W[1:, :] = np.random.randn(self.M, self.H) * 0.01
         
         # V: matriz com pesos da camada de saida
         self.V = np.random.randn(self.H, self.K) * 0.01 # shape: (H, K)
@@ -58,7 +60,7 @@ class MLP():
             self,
             X, y,
             alpha=0.001,
-            batch_size=64,
+            batch_size=32,
         ):
                     
         N = X.shape[0]
@@ -70,10 +72,11 @@ class MLP():
             batch_y = y[idx:idx+batch_size]
         
             """Forward pass"""
-            logit = batch_x.dot(self.W) # shape: (N, m) x (m, h) -> (N, h)
-            w_hidden = self.hidden_layer_activation(logit) # shape: (N, h)
-            
-            y_pred = self.predict(batch_x) # shape: (N, k)
+            logit = batch_x @ self.W                      # (N, H)
+            hidden = self.hidden_layer_activation(logit) # (N, H)
+
+            scores = hidden @ self.V                     # (N, K)
+            y_pred = self.output_layer_activation(scores)
             
             loss = self.cost_function(batch_y, y_pred) # shape: (N, k)
             losses.append(loss)
@@ -88,25 +91,27 @@ class MLP():
                     logit, derivative=True,
                 ) # shape: (N, h) * (N, h) -> (N, h)
             
-            dEdV = grad_erro.T.dot(w_hidden) # shape: (k, N) x (N, h) -> (k, h)
+            dEdV = hidden.T @ grad_erro / batch_size # shape: (k, N) x (N, h) -> (k, h)
             dEdW = batch_x.T.dot(Delta1) / batch_size # shape: (m, N) x (N, h) -> (m, h)
 
             # Aplica regularização
             if self.regularization == 'l1':
                 # TODO: consertar instabilidade (serrote)
-                dEdW = lasso(self.W)
-                dEdV = lasso(self.V, bias=False).T
+                dEdW += lasso(self.W)
+                dEdV += lasso(self.V, bias=False)
             
             elif self.regularization == 'l2':
-                dEdW = ridge(self.W)
-                dEdV = ridge(self.V, bias=False).T
+                regW = ridge(self.W)
+                regW[0, :] = 0.0   # para nao regularizar bias
+                dEdW += regW
+                dEdV += ridge(self.V)
 
             elif self.regularization == 'elastic_net':
-                dEdW = elastic_net(self.W)
-                dEdV = elastic_net(self.V, bias=False).T
+                dEdW += elastic_net(self.W)
+                dEdV += elastic_net(self.V, bias=False)
             
             self.W -= alpha * dEdW # shape: (m, h) * (m, h)
-            self.V -= alpha * dEdV.T # shape: (h, k) * (h, k)
+            self.V -= alpha * dEdV # shape: (h, k) * (h, k)
                     
         losses = np.array(losses)
 
@@ -117,7 +122,7 @@ class MLP():
             X_train, y_train, X_test, y_test,
             optimizer='GD',
             epochs=1000, 
-            learning_rate=0.001,
+            learning_rate=1e-3,
             tol=0.01,
             kfold=3,
         ):
@@ -138,7 +143,9 @@ class MLP():
             print('Fold', fold+1)
 
             # re-inicializa pesos
-            self.W = np.random.randn(*self.W.shape) * 0.01
+            # self.W = np.random.randn(*self.W.shape) * 0.01
+            self.W[1:, :] = np.random.randn(self.W.shape[0]-1, self.W.shape[1]) * 0.01
+            self.W[0, :] = 0.0
             self.V = np.random.randn(*self.V.shape) * 0.01
 
             start = fold *  fold_size
@@ -167,6 +174,7 @@ class MLP():
                     loss, dEdW, dEdV = self.gradient_descent(
                         X=xtrain, y=ytrain,
                         alpha=learning_rate,
+                        batch_size=32
                     )
 
                 elif optimizer == 'newton':
