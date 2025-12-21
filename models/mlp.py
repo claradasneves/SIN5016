@@ -58,7 +58,7 @@ class MLP():
             self,
             X, y,
             alpha=1,
-            batch_size=256,
+            batch_size=32,
             stochastic=True,
         ):
         """
@@ -108,10 +108,6 @@ class MLP():
 
             Hv = (hidden.T * classes_avg) @ hidden / batch_size # ()
             Hv += np.eye(self.H) * 1e-3 # regulariza a hessiana de V
-
-            # aproximação pela diag principal
-            # Hw = (batch_x.T @ batch_x) / batch_size # shape: (M, N) x (N, M) -> (M, M)
-            # Hw += np.eye(self.M) * 1e-3 # regulariza a hessiana de W
 
             """ considera método de Gauss-Newton. Atualizando via hessiana somente a última camada"""
             self.W -= 1e-3 * dEdW # shape: (M, M) * (M, H) -> (M, H)
@@ -193,7 +189,7 @@ class MLP():
             optimizer='newton',
             epochs=1000, 
             learning_rate=1e-3,
-            tol=1e-3,
+            tol=1e-2,
             kfold=3,
         ):
         """
@@ -245,7 +241,7 @@ class MLP():
                     loss, dEdW, dEdV = self.newton(
                         X=xtrain, y=ytrain,
                         alpha=learning_rate,
-                        batch_size=32,
+                        batch_size=256,
                     )
 
                 elif optimizer == 'bfgs':
@@ -263,7 +259,7 @@ class MLP():
 
                 val_loss = self.cost_function(yval, y_pred)
 
-                # Early stopping: parar se validação não melhorar
+                # # Early stopping: parar se validação não melhorar
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     patience_counter = 0
@@ -273,10 +269,10 @@ class MLP():
                         print(f'Early stopping na época {epoch}: validação não melhorou por {patience} épocas.')
                         break
 
-                # # Early stopping: verifica a convergência baseado na norma dos gradientes
-                # if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
-                #     print(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
-                #     break
+                # Critério de convergência: verifica a convergência baseado na norma dos gradientes
+                if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
+                    print(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
+                    break
 
                 tqdm.write(f'epoch {epoch+1}:\tAvg training loss ({optimizer})={np.mean(loss)}\t|\t\tval loss {val_loss}')
                 
