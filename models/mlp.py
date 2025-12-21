@@ -287,6 +287,11 @@ class MLP():
                 # Critério de convergência: verifica a convergência baseado na norma dos gradientes
                 if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
                     print(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
+                    
+                    # recupera melhores pesos antes de sair
+                    self.W = best_weights['W']
+                    self.V = best_weights['V']
+                    
                     break
 
                 tqdm.write(f'epoch {epoch+1}:\tAvg training loss ({optimizer})={np.mean(loss)}\t|\t\tval loss {val_loss}')
