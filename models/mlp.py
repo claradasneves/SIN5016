@@ -1,5 +1,6 @@
 import numpy as np
 from utils.regularizations import lasso, ridge, elastic_net
+from tqdm import tqdm
 
 class MLP():
     """multi-layer perceptron"""
@@ -18,10 +19,10 @@ class MLP():
         self.K = num_classes # qtdade de classes para predição
 
         # W: matriz com pesos da camada de entrada
-        # W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
-        # self.W = np.insert(W, 0, 1, axis=0) # add bias | shape: (M+1, H)
-        self.W = np.zeros((self.M + 1, self.H))
-        self.W[1:, :] = np.random.randn(self.M, self.H) * 0.01
+        W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
+        self.W = np.insert(W, 0, 0, axis=0) # add bias | shape: (M+1, H)
+        # self.W = np.zeros((self.M + 1, self.H))
+        # self.W[1:, :] = np.random.randn(self.M, self.H) * 0.01
         
         # V: matriz com pesos da camada de saida
         self.V = np.random.randn(self.H, self.K) * 0.01 # shape: (H, K)
@@ -121,7 +122,7 @@ class MLP():
             optimizer='GD',
             epochs=1000, 
             learning_rate=1e-3,
-            tol=0.01,
+            tol=1e-2,
             kfold=3,
         ):
         """
@@ -141,8 +142,8 @@ class MLP():
             print('Fold', fold+1)
 
             # re-inicializa pesos
-            # self.W = np.random.randn(*self.W.shape) * 0.01
-            self.W[1:, :] = np.random.randn(self.W.shape[0]-1, self.W.shape[1]) * 0.01
+            self.W = np.random.randn(*self.W.shape) * 0.01
+            # self.W[1:, :] = np.random.randn(self.W.shape[0]-1, self.W.shape[1]) * 0.01
             self.W[0, :] = 0.0
             self.V = np.random.randn(*self.V.shape) * 0.01
 
@@ -166,7 +167,7 @@ class MLP():
             patience = 10  # parar se validação não melhorar por 10 épocas
             patience_counter = 0
             
-            for epoch in range(epochs):
+            for epoch in tqdm(range(epochs)):
             
                 if optimizer == 'GD':
                     loss, dEdW, dEdV = self.gradient_descent(
@@ -204,12 +205,11 @@ class MLP():
                         break
 
                 # Verifica a convergência baseado na norma dos gradientes
-                """ TODO: consertar parada antecipada """
-                # if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
-                #     print(f'Convergência atingida no Gradiente | Época {epoch}')
-                #     break
+                if np.linalg.norm(dEdW) < tol and np.linalg.norm(dEdV) < tol: 
+                    print(f'Early stopping na época {epoch}: gradientes menores que a tolerância')
+                    break
 
-                # print(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val loss {val_loss}')
+                tqdm.write(f'epoch {epoch}: Avg training loss (GD)={np.mean(loss)} | val loss {val_loss}')
                 
                 history_loss.append([np.mean(loss), val_loss])
             
