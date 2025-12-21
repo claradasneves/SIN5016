@@ -52,13 +52,30 @@ def copiar_imagens(imagens: list, pasta_origem: str, pasta_destino: str, id_proc
     
     for img in imagens:
         caminho_origem = os.path.join(pasta_origem, img)
-        caminho_destino = os.path.join(pasta_destino, img)
+        pasta_id = os.path.join(pasta_destino, str(id_procurado))
+        os.makedirs(pasta_id, exist_ok=True)
+        caminho_destino = os.path.join(pasta_id, img)
 
         if os.path.exists(caminho_origem):
             shutil.copy(caminho_origem, caminho_destino)
             print(f"  ✓ Copiado: {img}")
         else:
             print(f"  ✗ Arquivo não encontrado: {img}")
+
+def obter_top_ids(df: pd.DataFrame, top_n: int = 2000) -> list:
+    """
+    Retorna os IDs mais frequentes no DataFrame.
+
+    Args:
+        df: DataFrame com colunas ['imagem', 'id']
+        top_n: número de classes mais frequentes
+
+    Returns:
+        Lista de IDs (int) ordenados por frequência decrescente
+    """
+    contagem = df['id'].value_counts()
+    top_ids = contagem.head(top_n).index.tolist()
+    return top_ids
 
 
 def main(arquivo_txt: str = None,
@@ -75,17 +92,19 @@ def main(arquivo_txt: str = None,
         destino: Caminho para a pasta de destino
     """
     # Usar valores padrão relativos ao diretório do script
+
     if arquivo_txt is None:
         arquivo_txt = os.path.join(SCRIPT_DIR, "atributos/identity_CelebA.txt")
-    if pasta_imagens is None:
-        pasta_imagens = os.path.join(SCRIPT_DIR, "img_align_celeba/img_align_celeba")
-    if destino is None:
-        destino = os.path.join(SCRIPT_DIR, "selected_images/")
-    if ids_procurados is None:
-        ids_procurados = ["2937"] # Exemplo de ID padrão, aceita IDs múltiplos
     
     # Carregar dados
     df = carregar_dados(arquivo_txt)
+    
+    if pasta_imagens is None:
+        pasta_imagens = os.path.abspath("/Users/claradasneves/Downloads/archive/img_align_celeba/img_align_celeba")
+    if destino is None:
+        destino = os.path.join(SCRIPT_DIR, "selected_images/")
+    if ids_procurados is None:
+        ids_procurados = obter_top_ids(df, top_n=2000)
     
     # Criar pasta de destino
     os.makedirs(destino, exist_ok=True)
