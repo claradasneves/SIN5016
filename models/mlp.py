@@ -101,6 +101,20 @@ class MLP():
             dEdV = (hidden.T @ grad_erro) / batch_size # shape: (k, N) x (N, h) -> (k, h)
             dEdW = (batch_x.T @ Delta1) / batch_size # shape: (m, N) x (N, h) -> (m, h)
 
+            # Aplica regularização
+            if self.regularization == 'l1':
+                # TODO: consertar instabilidade (serrote)
+                dEdW += lasso(self.W, bias=False)
+                dEdV += lasso(self.V, bias=False)
+            
+            elif self.regularization == 'l2':
+                dEdW += ridge(self.W, bias=False)
+                dEdV += ridge(self.V, bias=False)
+
+            elif self.regularization == 'elastic_net':
+                dEdW += elastic_net(self.W, bias=False)
+                dEdV += elastic_net(self.V, bias=False)
+
             """ cálculo das hessianas """
             _weights = y_pred * (1 - y_pred) # shape: (N, K)
 
