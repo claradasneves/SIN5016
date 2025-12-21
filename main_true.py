@@ -355,7 +355,7 @@ def build_model(args, num_features, num_classes):
             num_neurons=64,
             hidden_layer_activation=tanh,
             output_layer_activation=softmax,
-            cost_function=categorical_cross_entropy,
+            cost_function=entropia_cruzada,
             regularization=args.regularization,
         )
 
