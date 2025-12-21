@@ -95,6 +95,7 @@ class RegLog():
             X, y,
             alpha=0.001,
             batch_size=64,
+            stochastic=True,
         ):
         """"
         Args:
@@ -109,6 +110,12 @@ class RegLog():
 
         N = X.shape[0]
         losses = []
+
+        # Aplica SGD (gradiente descendente estocástico)
+        if stochastic:
+            idx = np.random.permutation(X.shape[0])
+            X = X[idx]
+            y = y[idx]
 
         for start in range(0, N, batch_size):
 
