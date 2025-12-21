@@ -35,6 +35,61 @@ class RegLog():
         
         return exp_logit / exp_categorias
 
+    def newton(
+            self,
+            X, y,
+            alpha=1e-3,
+            batch_size=256,
+            stochastic=True,
+        ):
+        """
+        Método de Newton para otimização. Aplica o método de Gauss-Newton para otimizar o cálculo da hessiana
+        """                    
+        N = X.shape[0]
+        losses = []
+
+        # Aplica SGD (gradiente descendente estocástico)
+        if stochastic:
+            idx = np.random.permutation(X.shape[0])
+            X = X[idx]
+            y = y[idx]
+
+        for start in range(0, N, batch_size):
+
+            batch_x = X[start:start+batch_size]
+            batch_y = y[start:start+batch_size]
+            
+            y_pred = self.predict(batch_x)
+
+            loss = self.cost_function(batch_y, y_pred)
+            losses.append(loss)
+
+            # shape: (N, m).T -> (m, N) x (N, k) -> (m, k)
+            grad_erro = (y_pred - batch_y)
+            dEdW = (batch_x.T @ grad_erro) / batch_size
+
+            if self.regularization == 'l1':
+                dEdW += lasso(self.W, bias=False)
+            
+            elif self.regularization == 'l2':
+                dEdW += ridge(self.W, bias=False)
+            
+            elif self.regularization == 'elastic_net':
+                dEdW += elastic_net(self.W, bias=False)
+
+            """ cálculo das hessianas """
+            _weights = y_pred * (1 - y_pred) # shape: (N, K)
+            classes_avg = np.mean(_weights, axis=1) # (N, K)
+
+            Hw = ((batch_x.T * classes_avg) @ batch_x) / batch_size
+            Hw += np.eye(self.M) * 1e-3 # regulariza a hessiana de W
+
+            self.W -= alpha * np.linalg.solve(Hw, dEdW)
+                    
+        losses = np.array(losses)
+
+        return losses, dEdW
+    
     def gradient_descent(
             self,
             X, y,
@@ -139,12 +194,15 @@ class RegLog():
                     loss, dEdW = self.gradient_descent(
                         X=xtrain, y=ytrain,
                         alpha=learning_rate,
-                        batch_size=32
+                        batch_size=64,
                     )
 
                 elif optimizer == 'newton':
-                    # TODO
-                    pass
+                    loss, dEdW = self.newton(
+                        X=xtrain, y=ytrain,
+                        alpha=0.75,
+                        batch_size=256,
+                    )
 
                 # Avaliação Final
                 y_pred = self.predict(xval)
