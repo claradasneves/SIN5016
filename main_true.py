@@ -9,6 +9,7 @@ import argparse
 import numpy as _np
 import os as _os
 import glob as _glob
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 
@@ -253,12 +254,13 @@ def normalize_features(X):
     return (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-8)
 
 def add_attributes(X, y, image_names, attr_file):
+    print('loading attributes...')
     attr_df, attr_cols = _load_attributes(attr_file)
 
     A_list = []
     valid_idx = []
 
-    for i, img in enumerate(image_names):
+    for i, img in tqdm(enumerate(image_names)):
         if img in attr_df.index:
             A_list.append(attr_df.loc[img, attr_cols].values)
             valid_idx.append(i)
@@ -319,6 +321,7 @@ def load_mock_dataset():
     return X.astype(float), y, num_features, num_classes
 
 def load_celeba_dataset(args):
+    print('loading celebA...')
     id_df = _load_identity(args.identity_file)
     X_raw, y_raw, image_names = _load_features_and_labels_from_dir(
         args.features_dir, id_df
