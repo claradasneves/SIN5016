@@ -20,9 +20,6 @@ class MLP():
 
         # W: matriz com pesos da camada de entrada
         self.W = np.random.randn(self.M, self.H) * 0.01 # shape: (M, H)
-        # self.W = np.insert(W, 0, 0, axis=0) # add bias | shape: (M+1, H)
-        # self.W = np.zeros((self.M + 1, self.H))
-        # self.W[1:, :] = np.random.randn(self.M, self.H) * 0.01
         
         # V: matriz com pesos da camada de saida
         self.V = np.random.randn(self.H, self.K) * 0.01 # shape: (H, K)
@@ -131,10 +128,6 @@ class MLP():
         print('='*10)
         print(f'Training classification model with {optimizer}')
 
-        # Prepara dados de treino e testa com a adição do intercepto
-        # X_train = np.insert(X_train, 0, 1, axis=1) # bias
-        # X_test = np.insert(X_test, 0, 1, axis=1)
-
         fold_size = X_train.shape[0] // kfold
 
         kfold_loss_history = []
@@ -143,8 +136,6 @@ class MLP():
 
             # re-inicializa pesos
             self.W = np.random.randn(*self.W.shape) * 0.01
-            # self.W[1:, :] = np.random.randn(self.W.shape[0]-1, self.W.shape[1]) * 0.01
-            # self.W[0, :] = 0.0
             self.V = np.random.randn(*self.V.shape) * 0.01
 
             start = fold *  fold_size
@@ -164,7 +155,7 @@ class MLP():
 
             history_loss = []
             best_val_loss = float('inf')
-            patience = 10  # parar se validação não melhorar por 10 épocas
+            patience = 5  # parar se validação não melhorar por 10 épocas
             patience_counter = 0
             
             for epoch in tqdm(range(epochs)):
