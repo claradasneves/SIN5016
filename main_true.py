@@ -42,6 +42,9 @@ parser.add_argument('--use-attributes',
 parser.add_argument('--attr-file', 
                     default=_os.path.join('data', 'atributos', 'list_attr_celeba.csv'),
                     help='CSV com atributos do CelebA (usado apenas se --use-attributes)')
+parser.add_argument('--experiment_name',
+                    help='Nome do experimento para salvar em logs'
+                    )
 
 
 args = parser.parse_args()
@@ -224,7 +227,7 @@ def stratified_split(X, y, train_size=0.9):
     
     return X[train_idx], y[train_idx], X[test_idx], y[test_idx]
 
-def plot_kfold_losses(all_folds_history):
+def plot_kfold_losses(all_folds_history, title):
     # 1. Padronizar o comprimento (folds podem ter parado antes devido ao 'tol')
     # Encontramos o número máximo de épocas executadas
     max_epochs = max(len(fold) for fold in all_folds_history)
@@ -258,10 +261,15 @@ def plot_kfold_losses(all_folds_history):
     plt.plot(epochs_range, mean_val, label='Validação (Média)', color='red', lw=2)
     plt.fill_between(epochs_range, mean_val - std_val, mean_val + std_val, color='red', alpha=0.2)
 
+    plt.title(title)
     plt.xlabel('Épocas')
     plt.ylabel('Loss')
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.7)
+
+    save_title = title.split('\n')[0]
+    plt.savefig(f'experiments/fig/{save_title}.png')
+
     plt.show()
 
 def normalize_features(X):
@@ -398,6 +406,8 @@ def evaluate_model(model, X_test, y_test):
 
     print(f"Test accuracy: {acc:.4f}")
 
+    return acc
+
 def main(args):
     EPOCHS = 500
 
@@ -421,7 +431,7 @@ def main(args):
     model = build_model(args, num_features, num_classes)
 
     # 4 - treino
-    history_loss = model.fit(
+    history_loss, test_loss = model.fit(
         X_train=X_train,
         y_train=y_train,
         X_test=X_test,
@@ -432,10 +442,18 @@ def main(args):
     )
 
     # 5 - avaliação
-    evaluate_model(model, X_test, y_test)
+    test_acc = evaluate_model(model, X_test, y_test)
 
     # 6 - plot
-    plot_kfold_losses(history_loss)
+    title = \
+        model.__class__.__name__ + \
+            f"(regularizer={model.regularization}_optimizer={args.optimizer})" \
+            f"\n test loss={round(test_loss, 3)}" \
+            f", test acc={round(test_acc, 3)}"
+    plot_kfold_losses(
+        history_loss,
+        title=title,
+    )
 
 if __name__ == "__main__":
     main(args)

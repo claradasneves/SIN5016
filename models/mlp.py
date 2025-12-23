@@ -309,4 +309,4 @@ class MLP():
 
         print('test loss:', test_loss)
         
-        return kfold_loss_history
+        return kfold_loss_history, test_loss
