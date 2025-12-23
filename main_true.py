@@ -271,7 +271,7 @@ def plot_kfold_losses(all_folds_history, title):
     save_title = title.split('\n')[0]
     plt.savefig(f'experiments/fig/{save_title}.png')
 
-    plt.show()
+    # plt.show()
 
 def normalize_features(X):
     X = X.astype(float)
