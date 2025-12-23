@@ -3,6 +3,12 @@ Repositório que contém os trabalhos parciais e finais da disciplina SIN5016 - 
 
 Modelo para tarefa de classificação com múltiplas classes (com pelo menos 20% da base) (identificação biométrica)
 
+## Como disparar o shell para experimentos?
+No terminal execute:
+>> chmod +x ./experiments.sh
+
+A seguir execute:
+>> ./experiments.sh
 
 ## Como rodar o código?
 No terminal execute: 
