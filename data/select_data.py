@@ -6,6 +6,8 @@ import pandas as pd
 import zipfile
 import imageio
 from hog import extract_hog_feature
+import argparse
+
 
 # Obter o diretório do script
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -171,9 +173,43 @@ def pipeline_celeba_hog(
 
 # Execução
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Pipeline de extração de HOG do CelebA"
+    )
+
+    parser.add_argument(
+        "--identity_txt",
+        type=str,
+        default=os.path.join(SCRIPT_DIR, "atributos/identity_CelebA.txt"),
+        help="Caminho para o arquivo identity_CelebA.txt"
+    )
+
+    parser.add_argument(
+        "--imagens_dir",
+        type=str,
+        required=True,
+        help="Diretório contendo as imagens do CelebA"
+    )
+
+    parser.add_argument(
+        "--out_dir",
+        type=str,
+        default=os.path.join(SCRIPT_DIR, "hog_npy"),
+        help="Diretório de saída para os arquivos .npy"
+    )
+
+    parser.add_argument(
+        "--top_n",
+        type=int,
+        default=2000,
+        help="Número de identidades mais frequentes"
+    )
+
+    args = parser.parse_args()
+
     pipeline_celeba_hog(
-        identity_txt=os.path.join(SCRIPT_DIR, "atributos/identity_CelebA.txt"),
-        imagens_dir="/Users/claradasneves/Downloads/archive/img_align_celeba/img_align_celeba",
-        out_dir=os.path.join(SCRIPT_DIR, "hog_npy"),
-        top_n=2000,
+        identity_txt=args.identity_txt,
+        imagens_dir=args.imagens_dir,
+        out_dir=args.out_dir,
+        top_n=args.top_n,
     )
