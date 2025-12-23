@@ -243,7 +243,8 @@ class RegLog():
                     
                     break
 
-                tqdm.write(f'epoch {epoch+1}:\tAvg training loss ({optimizer})={np.mean(loss)}\t|\t\tval loss {val_loss}')
+                # tqdm.write(f'epoch {epoch+1}:\tAvg training loss ({optimizer})={np.mean(loss)}\t|\t\tval loss {val_loss}')
+                tqdm.write(f'{epoch+1};{np.mean(loss)};{val_loss}')
                 
                 history_loss.append([np.mean(loss), val_loss])
             
