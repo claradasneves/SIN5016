@@ -397,17 +397,57 @@ def build_model(args, num_features, num_classes):
             regularization=args.regularization,
         )
 
-def evaluate_model(model, X_test, y_test):
-    # X_test_bias = np.insert(X_test, 0, 1, axis=1)
+def evaluate_model(model, X_test, y_test, top_k=10):
     y_pred = model.predict(X_test)
 
+    # acurácia global
     acc = np.mean(
         np.argmax(y_pred, axis=1) == np.argmax(y_test, axis=1)
     )
 
-    print(f"Test accuracy: {acc:.4f}")
+    print(f"Test accuracy (global): {acc:.4f}")
 
-    return acc
+    # acurácia por classe
+    acc_per_class = accuracy_per_class(y_test, y_pred)
+    acc_values = np.array([v for v in acc_per_class.values() if not np.isnan(v)])
+
+    print(f"Acurácia média por classe: {acc_values.mean():.4f}")
+    print(f"Desvio padrão: {acc_values.std():.4f}")
+
+    print_top_k_classes(acc_per_class, k=top_k)
+
+    return acc, acc_per_class
+
+def print_top_k_classes(acc_per_class, k=10):
+    items = [(c, a) for c, a in acc_per_class.items() if not np.isnan(a)]
+    items.sort(key=lambda x: x[1])
+
+    print(f"\nTop {k} piores classes:")
+    for c, a in items[:k]:
+        print(f"Classe {c}: {a:.3f}")
+
+    print(f"\nTop {k} melhores classes:")
+    for c, a in items[-k:]:
+        print(f"Classe {c}: {a:.3f}")
+
+def accuracy_per_class(y_true, y_pred):
+    """
+    y_true, y_pred: one-hot encoded
+    """
+    y_true_idx = np.argmax(y_true, axis=1)
+    y_pred_idx = np.argmax(y_pred, axis=1)
+
+    num_classes = y_true.shape[1]
+    acc_per_class = {}
+
+    for c in range(num_classes):
+        idx = (y_true_idx == c)
+        if np.sum(idx) == 0:
+            acc_per_class[c] = np.nan
+        else:
+            acc_per_class[c] = np.mean(y_pred_idx[idx] == c)
+
+    return acc_per_class
 
 def main(args):
     EPOCHS = 500
@@ -443,7 +483,7 @@ def main(args):
     )
 
     # 5 - avaliação
-    test_acc = evaluate_model(model, X_test, y_test)
+    test_acc, acc_per_class = evaluate_model(model, X_test, y_test)
 
     # 6 - plot
     title = \
