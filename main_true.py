@@ -12,6 +12,7 @@ import glob as _glob
 from tqdm import tqdm
 import time
 import pandas as pd
+import joblib
 
 parser = argparse.ArgumentParser()
 
@@ -446,7 +447,7 @@ def main(args):
 
     # 6 - plot
     title = \
-        model.__class__.__name__ + \
+        model.__class__.__name__+ f'+HOG={args.use_attributes}-' + \
             f"(regularizer={model.regularization}_optimizer={args.optimizer})" \
             f"\n test loss={round(test_loss, 3)}" \
             f", test acc={round(test_acc, 3)}"
@@ -454,6 +455,10 @@ def main(args):
         history_loss,
         title=title,
     )
+
+    # 7 - salva modelo c/ os melhores pesos 
+    model_name = title.split('\n')[0]
+    joblib.dump(model, f'experiments/weights/{model_name}.joblib')
 
 if __name__ == "__main__":
     main(args)
