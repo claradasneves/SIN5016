@@ -1,8 +1,11 @@
 import shutil
 import os
 import sys
-from pathlib import Path
+import numpy as np
 import pandas as pd
+import zipfile
+import imageio
+from hog import extract_hog_feature
 
 # Obter o diretório do script
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -120,6 +123,57 @@ def main(arquivo_txt: str = None,
     
     print("\n✓ Processo concluído!")
 
+def pipeline_celeba_hog(
+    identity_txt: str,
+    imagens_dir: str,
+    out_dir: str,
+    top_n: int = 2000,
+):
+    os.makedirs(out_dir, exist_ok=True)
 
+    df = carregar_dados(identity_txt)
+    top_ids = obter_top_ids(df, top_n)
+
+    print(f"Processando {len(top_ids)} identidades")
+
+    total = 0
+
+    for person_id in top_ids:
+        imagens = df[df['id'] == person_id]['imagem'].tolist()
+
+        for img_name in imagens:
+            img_path = os.path.join(imagens_dir, img_name)
+
+            if not os.path.exists(img_path):
+                print(f"Arquivo não encontrado: {img_name}")
+                continue
+
+            try:
+                img = imageio.imread(img_path)
+
+                hog_feat = extract_hog_feature(img)
+
+                img_id = os.path.splitext(img_name)[0]
+                out_path = os.path.join(out_dir, f"{img_id}.npy")
+
+                np.save(out_path, hog_feat)
+
+                total += 1
+                if total % 1000 == 0:
+                    print(f"  {total} imagens processadas")
+
+            except Exception as e:
+                print(f"Erro em {img_name}: {e}")
+
+    print("\n✓ Pipeline finalizado")
+    print(f"✓ Total de imagens processadas: {total}")
+    print(f"✓ Features em: {out_dir}")
+
+# Execução
 if __name__ == "__main__":
-    main()
+    pipeline_celeba_hog(
+        identity_txt=os.path.join(SCRIPT_DIR, "atributos/identity_CelebA.txt"),
+        imagens_dir="/Users/claradasneves/Downloads/archive/img_align_celeba/img_align_celeba",
+        out_dir=os.path.join(SCRIPT_DIR, "hog_npy"),
+        top_n=2000,
+    )
