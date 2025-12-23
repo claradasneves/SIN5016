@@ -207,7 +207,7 @@ class RegLog():
                 elif optimizer == 'newton':
                     loss, dEdW = self.newton(
                         X=xtrain, y=ytrain,
-                        alpha=0.75,
+                        alpha=1.0,
                         batch_size=256,
                     )
 
