@@ -449,6 +449,41 @@ def accuracy_per_class(y_true, y_pred):
 
     return acc_per_class
 
+def class_avg_acc(y_true_onehot, y_pred_probs):
+    """
+    Simula o cálculo de acurácia por classe do sklearn usando apenas NumPy.
+    """
+    # Converte de one-hot/probabilidades para índices de classe
+    y_true = np.argmax(y_true_onehot, axis=1)
+    y_pred = np.argmax(y_pred_probs, axis=1)
+    
+    # Identifica as classes únicas presentes
+    classes = np.unique(y_true)
+    
+    print("-" * 35)
+    print("Classe;acc média")
+    
+    per_class_accuracies = []
+
+    for _ in classes:
+        # Cria uma máscara para os exemplos que pertencem à classe atual
+        indices_da_classe = (y_true == _)
+        
+        # Se não houver amostras dessa classe no test set, pula para evitar divisão por zero
+        if np.sum(indices_da_classe) == 0:
+            continue
+            
+        # Calcula quantos a rede acertou dentro desta classe específica
+        acertos = np.sum((y_pred[indices_da_classe] == _))
+        total = np.sum(indices_da_classe)
+        
+        accuracy_cls = acertos / total
+        per_class_accuracies.append(accuracy_cls)
+        
+        print(f"{int(_)};{accuracy_cls}")
+
+    print(f"Média;{np.mean(per_class_accuracies)}")
+
 def main(args):
     EPOCHS = 500
 
@@ -484,6 +519,9 @@ def main(args):
 
     # 5 - avaliação
     test_acc, acc_per_class = evaluate_model(model, X_test, y_test)
+
+    # 5.1 - acurácia média por classe
+    class_avg_acc(y_test, model.predict(X_test))
 
     # 6 - plot
     title = \
