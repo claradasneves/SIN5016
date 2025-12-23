@@ -121,7 +121,7 @@ class MLP():
             classes_avg = np.mean(_weights, axis=1) # (N, K)
 
             Hv = (hidden.T * classes_avg) @ hidden / batch_size # ()
-            Hv += np.eye(self.H) * 1e-3 # regulariza a hessiana de V
+            Hv += np.eye(self.H) * 1e-2 # regulariza a hessiana de V
 
             """ considera método de Gauss-Newton. Atualizando via hessiana somente a última camada"""
             self.W -= 1e-3 * dEdW # shape: (M, M) * (M, H) -> (M, H)

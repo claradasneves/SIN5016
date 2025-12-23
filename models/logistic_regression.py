@@ -82,7 +82,7 @@ class RegLog():
             classes_avg = np.mean(_weights, axis=1) # (N, K)
 
             Hw = ((batch_x.T * classes_avg) @ batch_x) / batch_size
-            Hw += np.eye(self.M) * 1e-3 # regulariza a hessiana de W
+            Hw += np.eye(self.M) * 1e-2 # regulariza a hessiana de W
 
             self.W -= alpha * np.linalg.solve(Hw, dEdW)
                     
