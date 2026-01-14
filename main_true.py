@@ -1,9 +1,10 @@
 import numpy as np
-from models import MLP, RegLog
+from models import MLP, RegLog, CNNModel
 from utils.activations import tanh, softmax
 from utils.data_processing import one_hot_encoding, split_train_test
 from utils.loss_functions import entropia_cruzada
 from sklearn.datasets import fetch_olivetti_faces
+from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import argparse
 import numpy as _np
@@ -13,6 +14,8 @@ from tqdm import tqdm
 import time
 import pandas as pd
 import joblib
+import imageio.v3 as imageio
+from skimage.transform import resize
 
 parser = argparse.ArgumentParser()
 
@@ -44,9 +47,21 @@ parser.add_argument('--attr-file',
                     default=_os.path.join('data', 'atributos', 'list_attr_celeba.csv'),
                     help='CSV com atributos do CelebA (usado apenas se --use-attributes)')
 parser.add_argument('--experiment_name',
-                    help='Nome do experimento para salvar em logs'
-                    )
-
+                    help='Nome do experimento para salvar em logs')
+parser.add_argument('--train-on-images',
+                    action='store_true',
+                    help='Se ativado, carrega e treina com imagens em vez de features HOG')
+parser.add_argument('--images-dir',
+                    default=None,
+                    help='Diretório contendo imagens em estrutura aninhada (classe_id/imagem.jpg). Ex: /Users/claradasneves/Documents/selecionadas')
+parser.add_argument('--img-size',
+                    type=int,
+                    default=64,
+                    help='Tamanho para redimensionar imagens (padrão: 64)')
+parser.add_argument('--batch-size',
+                    type=int,
+                    default=32,
+                    help='Batch size para treinamento da CNN (padrão: 32)')
 
 args = parser.parse_args()
 
@@ -348,6 +363,59 @@ def load_mock_dataset():
 
     return X.astype(float), y, num_features, num_classes
 
+def load_images_from_nested_structure(root_dir, img_size=64, max_classes=None):
+    print(f"Carregando imagens de {root_dir}...")
+    
+    class_dirs = sorted([d for d in _glob.glob(_os.path.join(root_dir, '*')) if _os.path.isdir(d)])
+    
+    if max_classes:
+        class_dirs = class_dirs[:max_classes]
+    
+    images = []
+    labels = []
+    class_names = []
+    
+    for class_idx, class_dir in enumerate(tqdm(class_dirs, desc="Carregando classes")):
+        class_name = _os.path.basename(class_dir)
+        class_names.append(class_name)
+        
+        image_files = _glob.glob(_os.path.join(class_dir, '*.jpg')) + \
+                      _glob.glob(_os.path.join(class_dir, '*.png'))
+        
+        for img_file in image_files:
+            try:
+                img = imageio.imread(img_file)
+                
+                # lida com escalas de cinza
+                if len(img.shape) == 2:
+                    img = _np.stack([img] * 3, axis=-1)
+                # imagens coloridas
+                elif img.shape[2] == 4:
+                    img = img[:, :, :3]
+                
+                # Resize
+                img = resize(img, (img_size, img_size, 3), anti_aliasing=True)
+                
+                images.append(img.astype(_np.float32))
+                labels.append(class_idx)
+            except Exception as e:
+                pass 
+    
+    X = _np.array(images)
+    y_idx = _np.array(labels)
+    
+    print(f"Carregadas {len(images)} imagens de {len(class_names)} classes")
+    print(f"Shape dos dados: {X.shape}")
+    
+    num_classes = len(class_names)
+    # CNN expects one-hot encoding
+    y = one_hot_encoding(y_idx, num_classes)
+    
+    sample_shape = X.shape[1:]
+    
+    return X, y, sample_shape, num_classes
+
+
 def load_celeba_dataset(args):
     print('loading celebA...')
     id_df = _load_identity(args.identity_file)
@@ -369,14 +437,29 @@ def load_celeba_dataset(args):
     return X.astype(float), y, X.shape[1], num_classes
 
 def load_dataset(args):
-    if args.features_dir:
+    if args.train_on_images and args.images_dir:
+        return load_images_from_nested_structure(
+            args.images_dir,
+            img_size=args.img_size,
+            max_classes=args.num_classes if args.num_classes > 0 else None
+        )
+    elif args.features_dir:
         return load_celeba_dataset(args)
     else:
         return load_mock_dataset()
 
 def build_model(args, num_features, num_classes):
     if args.model is None:
-        raise ValueError("Use --model mlp ou reglog")
+        raise ValueError("Use --model mlp, reglog ou cnn")
+
+    # Se está usando imagens, force CNN
+    if args.train_on_images and isinstance(num_features, tuple):
+        if args.model != 'cnn':
+            raise ValueError("Quando usando --train-on-images, deve-se usar --model cnn")
+        return CNNModel(
+            num_classes=num_classes,
+            input_shape=num_features,
+        )
 
     if args.model == 'mlp':
         return MLP(
@@ -397,18 +480,32 @@ def build_model(args, num_features, num_classes):
             regularization=args.regularization,
         )
 
+    if args.model == 'cnn':
+        return CNNModel(
+            num_classes=num_classes,
+            input_shape=num_features,
+        )
+
 def evaluate_model(model, X_test, y_test, top_k=10):
     y_pred = model.predict(X_test)
 
-    # acurácia global
+    # Detectar formato: one-hot (2D) ou indices (1D)
+    if y_test.ndim == 2:
+        # one-hot encoded
+        y_test_idx = np.argmax(y_test, axis=1)
+    else:
+        # numeric indices
+        y_test_idx = y_test
+
+    # acurácia global (y_pred é probabilidades)
     acc = np.mean(
-        np.argmax(y_pred, axis=1) == np.argmax(y_test, axis=1)
+        np.argmax(y_pred, axis=1) == y_test_idx
     )
 
     print(f"Test accuracy (global): {acc:.4f}")
 
     # acurácia por classe
-    acc_per_class = accuracy_per_class(y_test, y_pred)
+    acc_per_class = accuracy_per_class(y_test_idx, y_pred)
     acc_values = np.array([v for v in acc_per_class.values() if not np.isnan(v)])
 
     print(f"Acurácia média por classe: {acc_values.mean():.4f}")
@@ -432,12 +529,13 @@ def print_top_k_classes(acc_per_class, k=10):
 
 def accuracy_per_class(y_true, y_pred):
     """
-    y_true, y_pred: one-hot encoded
+    y_true: numeric indices
+    y_pred: class probabilities (softmax output)
     """
-    y_true_idx = np.argmax(y_true, axis=1)
+    y_true_idx = y_true  # já são indices numéricos
     y_pred_idx = np.argmax(y_pred, axis=1)
 
-    num_classes = y_true.shape[1]
+    num_classes = y_pred.shape[1]
     acc_per_class = {}
 
     for c in range(num_classes):
@@ -451,16 +549,29 @@ def accuracy_per_class(y_true, y_pred):
 
 def main(args):
     EPOCHS = 500
+    LEARNING_RATE = 1e-1
 
     # 1 - carregar dados
-    X, y, num_features, num_classes = load_dataset(args)
+    result = load_dataset(args)
+    X, y, num_features, num_classes = result
 
     # 2 - split
-    # X_train, y_train, X_test, y_test = stratified_split(X, y)
-    X_train, y_train, X_test, y_test = split_train_test(X, y, rate=0.7)
+    if args.train_on_images:
+        # For images, convert one-hot to indices for stratify
+        y_idx = np.argmax(y, axis=1)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y_idx
+        )
+    else:
+        X_train, y_train, X_test, y_test = split_train_test(X, y, rate=0.7)
 
-    mean = X_train.mean(axis=0)
-    std = X_train.std(axis=0) + 1e-8
+    # 3 - normalize
+    if args.train_on_images:
+        mean = X_train.mean(axis=(0, 1, 2), keepdims=True)
+        std = X_train.std(axis=(0, 1, 2), keepdims=True) + 1e-8
+    else:
+        mean = X_train.mean(axis=0)
+        std = X_train.std(axis=0) + 1e-8
 
     X_train = (X_train - mean) / std
     X_test  = (X_test - mean) / std
@@ -468,27 +579,42 @@ def main(args):
     print('Train set shapes', X_train.shape, y_train.shape)
     print('Test set shapes', X_test.shape, y_test.shape)
 
-    # 3 - modelo
+    # 4 - modelo
     model = build_model(args, num_features, num_classes)
 
-    # 4 - treino
-    history_loss, test_loss = model.fit(
-        X_train=X_train,
-        y_train=y_train,
-        X_test=X_test,
-        y_test=y_test,
-        learning_rate=1e-1,
-        epochs=EPOCHS,
-        optimizer=args.optimizer,
-    )
+    # 5 - treino
+    if args.train_on_images and args.model == 'cnn':
+        # Para CNN com images
+        history_loss, test_loss = model.fit(
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
+            learning_rate=1e-3,
+            epochs=50,
+            batch_size=args.batch_size,
+            validation_split=0.1
+        )
+    else:
+        # Para MLP/RegLog com features
+        history_loss, test_loss = model.fit(
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
+            learning_rate=LEARNING_RATE,
+            epochs=EPOCHS,
+            optimizer=args.optimizer,
+        )
 
-    # 5 - avaliação
+    # 6 - avaliação
     test_acc, acc_per_class = evaluate_model(model, X_test, y_test)
 
-    # 6 - plot
+    # 7 - plot
+    regularization_str = getattr(model, 'regularization', 'N/A')
     title = \
         model.__class__.__name__+ f'+HOG={args.use_attributes}-' + \
-            f"(regularizer={model.regularization}_optimizer={args.optimizer})" \
+            f"(regularizer={regularization_str}_optimizer={args.optimizer})" \
             f"\n test loss={round(test_loss, 3)}" \
             f", test acc={round(test_acc, 3)}"
     plot_kfold_losses(
@@ -496,7 +622,7 @@ def main(args):
         title=title,
     )
 
-    # 7 - salva modelo c/ os melhores pesos 
+    # 8 - salva modelo c/ os melhores pesos 
     model_name = title.split('\n')[0]
     joblib.dump(model, f'experiments/weights/{model_name}.joblib')
 
