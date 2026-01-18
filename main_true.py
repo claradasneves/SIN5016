@@ -614,8 +614,15 @@ def main(args):
     print('Train set shapes', X_train.shape, y_train.shape)
     print('Test set shapes', X_test.shape, y_test.shape)
 
+    # definindo shape do input
+    if args.train_on_images:
+        channels = 1 if args.grayscale else 3
+        input_shape = (args.img_size, args.img_size, channels)
+    else:
+        input_shape = (num_features,)
+
     # 4 - modelo
-    model = build_model(args, num_features, num_classes)
+    model = build_model(args, input_shape, num_classes)
 
     # 5 - treino
     if args.train_on_images and args.model == 'cnn':
