@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import layers, models
+from tensorflow.keras import layers, models, callbacks
 from tqdm import tqdm
 
 
@@ -23,34 +23,35 @@ class CNNModel:
         # First block
         model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
         model.add(layers.BatchNormalization())
-        model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
-        model.add(layers.BatchNormalization())
+        # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+        # model.add(layers.BatchNormalization())
         model.add(layers.MaxPooling2D((2, 2)))
-        model.add(layers.Dropout(0.25))
+        # model.add(layers.Dropout(0.25))
         
         # Second block
-        model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-        model.add(layers.BatchNormalization())
-        model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-        model.add(layers.BatchNormalization())
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(layers.Dropout(0.25))
+        # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+        # model.add(layers.BatchNormalization())
+        # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+        # model.add(layers.BatchNormalization())
+        # model.add(layers.MaxPooling2D((2, 2)))
+        # model.add(layers.Dropout(0.25))
         
         # Third block
-        model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-        model.add(layers.BatchNormalization())
-        model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-        model.add(layers.BatchNormalization())
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(layers.Dropout(0.25))
+        # model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
+        # model.add(layers.BatchNormalization())
+        # model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
+        # model.add(layers.BatchNormalization())
+        # model.add(layers.MaxPooling2D((2, 2)))
+        # model.add(layers.Dropout(0.25))
         
         # Dense layers
         model.add(layers.Flatten())
-        model.add(layers.Dense(512, activation='relu'))
-        model.add(layers.BatchNormalization())
-        model.add(layers.Dropout(0.5))
-        model.add(layers.Dense(256, activation='relu'))
-        model.add(layers.BatchNormalization())
+        # model.add(layers.Dense(512, activation='relu'))
+        # model.add(layers.BatchNormalization())
+        # model.add(layers.Dropout(0.5))
+        # model.add(layers.Dense(256, activation='relu'))
+        # model.add(layers.BatchNormalization())
+
         model.add(layers.Dropout(0.5))
         model.add(layers.Dense(self.num_classes, activation='softmax'))
         
@@ -77,6 +78,18 @@ class CNNModel:
         """
         # constroi modelo
         self.model = self._build_model()
+
+        save_best_model = callbacks.ModelCheckpoint(
+            filepath=f'experiments/weights/cnn_checkpoint.keras',
+            monitor='val_loss',
+            save_best_only=True,
+            mode='min',
+            verbose=0,
+        )
+        callback = callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=2,
+        )
         
         # Detectar formato: one-hot (2D) ou indices (1D)
         if y_train.ndim == 2:
@@ -96,31 +109,27 @@ class CNNModel:
             loss=loss_fn,
             metrics=['accuracy']
         )
+
+        # visualiza arquitetura da cnn
+        self.model.summary()
         
         # treina modelo
         self.history = self.model.fit(
-            X_train, y_train_to_fit,
+            X_train, 
+            y_train_to_fit,
             batch_size=batch_size,
             epochs=epochs,
             validation_split=validation_split,
-            verbose=1
+            callbacks=[callback, save_best_model],
+            verbose=1,
         )
         
         # evaluate no conjunto de teste
         test_loss, test_acc = self.model.evaluate(X_test, y_test_to_fit, verbose=0)
         print(f'\nTest accuracy: {test_acc:.4f}')
         print(f'Test loss: {test_loss:.4f}')
-        
-        # retorna historico de treino e loss de teste
-        history_list = []
-        losses = self.history.history.get('loss', [])
-        val_losses = self.history.history.get('val_loss', [])
-        for i in range(max(len(losses), len(val_losses))):
-            tr = losses[i] if i < len(losses) else np.nan
-            va = val_losses[i] if i < len(val_losses) else np.nan
-            history_list.append([tr, va])
-        
-        return history_list, test_loss
+                
+        return self.history, test_loss
 
     
     def predict(self, X):
