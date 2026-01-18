@@ -20,38 +20,64 @@ class CNNModel:
         # Input layer
         model.add(layers.Input(shape=self.input_shape))
         
-        # First block
-        model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
-        model.add(layers.BatchNormalization())
+        # # First block
         # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
         # model.add(layers.BatchNormalization())
-        model.add(layers.MaxPooling2D((2, 2)))
-        # model.add(layers.Dropout(0.25))
+        # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+        # model.add(layers.BatchNormalization())
+        # model.add(layers.MaxPooling2D((3, 3)))
         
-        # Second block
-        # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+        # # Second block
+        # model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
         # model.add(layers.BatchNormalization())
-        # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+        # model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
         # model.add(layers.BatchNormalization())
         # model.add(layers.MaxPooling2D((2, 2)))
-        # model.add(layers.Dropout(0.25))
         
-        # Third block
-        # model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-        # model.add(layers.BatchNormalization())
-        # model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
+        # # Third block
+        # model.add(layers.Conv2D(16, (3, 3), padding='same', activation='relu'))
         # model.add(layers.BatchNormalization())
         # model.add(layers.MaxPooling2D((2, 2)))
-        # model.add(layers.Dropout(0.25))
         
-        # Dense layers
-        model.add(layers.Flatten())
-        # model.add(layers.Dense(512, activation='relu'))
-        # model.add(layers.BatchNormalization())
-        # model.add(layers.Dropout(0.5))
+        # # Dense layers
+        # model.add(layers.Flatten())
         # model.add(layers.Dense(256, activation='relu'))
         # model.add(layers.BatchNormalization())
 
+        # model.add(layers.Dropout(0.5))
+        # model.add(layers.Dense(self.num_classes, activation='softmax'))
+        
+        # First block
+        model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
+        model.add(layers.BatchNormalization())
+        model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
+        model.add(layers.BatchNormalization())
+        model.add(layers.MaxPooling2D((2, 2)))
+        model.add(layers.Dropout(0.25))
+        
+        # Second block
+        model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+        model.add(layers.BatchNormalization())
+        model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+        model.add(layers.BatchNormalization())
+        model.add(layers.MaxPooling2D((2, 2)))
+        model.add(layers.Dropout(0.25))
+        
+        # Third block
+        model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
+        model.add(layers.BatchNormalization())
+        model.add(layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
+        model.add(layers.BatchNormalization())
+        model.add(layers.MaxPooling2D((2, 2)))
+        model.add(layers.Dropout(0.25))
+        
+        # Dense layers
+        model.add(layers.Flatten())
+        model.add(layers.Dense(512, activation='relu'))
+        model.add(layers.BatchNormalization())
+        model.add(layers.Dropout(0.5))
+        model.add(layers.Dense(256, activation='relu'))
+        model.add(layers.BatchNormalization())
         model.add(layers.Dropout(0.5))
         model.add(layers.Dense(self.num_classes, activation='softmax'))
         
@@ -88,7 +114,7 @@ class CNNModel:
         )
         callback = callbacks.EarlyStopping(
             monitor='val_loss',
-            patience=2,
+            patience=3,
         )
         
         # Detectar formato: one-hot (2D) ou indices (1D)
