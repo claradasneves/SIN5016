@@ -9,3 +9,5 @@ data/hog_npy/
 *run_error.txt
 *.png
 *.joblib
+*.jpg
+*.keras
