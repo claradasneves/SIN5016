@@ -312,7 +312,6 @@ def plot_cnn_kfold_losses(history, title):
 
     # plt.tight_layout()
     save_title = title.split('\n')[0]
-    plt.show()
     plt.savefig(f'./experiments/fig/{save_title}.png')
 
 
@@ -579,7 +578,7 @@ def accuracy_per_class(y_true, y_pred):
     return acc_per_class
 
 def main(args):
-    EPOCHS = 500
+    EPOCHS = 50
     LEARNING_RATE = 1e-1
 
     # 1 - carregar dados
@@ -633,7 +632,7 @@ def main(args):
             X_test=X_test,
             y_test=y_test,
             learning_rate=1e-3,
-            epochs=3,
+            epochs=EPOCHS,
             batch_size=args.batch_size,
             validation_split=0.1
         )
