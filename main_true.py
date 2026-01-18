@@ -253,7 +253,8 @@ def plot_kfold_losses(all_folds_history, title):
     val_losses = np.full((len(all_folds_history), max_epochs), np.nan)
 
     for i, fold in enumerate(all_folds_history):
-        fold_arr = np.array(fold)
+        fold_arr = np.array([fold])
+
         train_losses[i, :len(fold)] = fold_arr[:, 0]
         val_losses[i, :len(fold)] = fold_arr[:, 1]
 
@@ -284,9 +285,30 @@ def plot_kfold_losses(all_folds_history, title):
     plt.grid(True, linestyle='--', alpha=0.7)
 
     save_title = title.split('\n')[0]
-    plt.savefig(f'experiments/fig/{save_title}.png')
+    # plt.savefig(f'experiments/fig/{save_title}.png')
 
-    # plt.show()
+    plt.show()
+
+def plot_cnn_kfold_losses(history, title):
+    plt.figure(figsize=(12, 5))
+
+    # Plot training & validation loss values
+    # plt.subplot(1, 2, 1)
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title(title)
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Validation'], loc='upper right')
+
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+
+    # plt.tight_layout()
+    save_title = title.split('\n')[0]
+    plt.show()
+    plt.savefig(f'./experiments/fig/{save_title}.png')
+
 
 def normalize_features(X):
     X = X.astype(float)
@@ -414,7 +436,6 @@ def load_images_from_nested_structure(root_dir, img_size=64, max_classes=None):
     sample_shape = X.shape[1:]
     
     return X, y, sample_shape, num_classes
-
 
 def load_celeba_dataset(args):
     print('loading celebA...')
@@ -591,7 +612,7 @@ def main(args):
             X_test=X_test,
             y_test=y_test,
             learning_rate=1e-3,
-            epochs=50,
+            epochs=3,
             batch_size=args.batch_size,
             validation_split=0.1
         )
@@ -611,13 +632,14 @@ def main(args):
     test_acc, acc_per_class = evaluate_model(model, X_test, y_test)
 
     # 7 - plot
-    regularization_str = getattr(model, 'regularization', 'N/A')
+    regularization_str = getattr(model, 'regularization', 'NA')
     title = \
         model.__class__.__name__+ f'+HOG={args.use_attributes}-' + \
             f"(regularizer={regularization_str}_optimizer={args.optimizer})" \
             f"\n test loss={round(test_loss, 3)}" \
             f", test acc={round(test_acc, 3)}"
-    plot_kfold_losses(
+    
+    plot_cnn_kfold_losses(
         history_loss,
         title=title,
     )
