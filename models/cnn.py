@@ -19,34 +19,7 @@ class CNNModel:
         
         # Input layer
         model.add(layers.Input(shape=self.input_shape))
-        
-        # # First block
-        # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-        # model.add(layers.BatchNormalization())
-        # model.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-        # model.add(layers.BatchNormalization())
-        # model.add(layers.MaxPooling2D((3, 3)))
-        
-        # # Second block
-        # model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
-        # model.add(layers.BatchNormalization())
-        # model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
-        # model.add(layers.BatchNormalization())
-        # model.add(layers.MaxPooling2D((2, 2)))
-        
-        # # Third block
-        # model.add(layers.Conv2D(16, (3, 3), padding='same', activation='relu'))
-        # model.add(layers.BatchNormalization())
-        # model.add(layers.MaxPooling2D((2, 2)))
-        
-        # # Dense layers
-        # model.add(layers.Flatten())
-        # model.add(layers.Dense(256, activation='relu'))
-        # model.add(layers.BatchNormalization())
-
-        # model.add(layers.Dropout(0.5))
-        # model.add(layers.Dense(self.num_classes, activation='softmax'))
-        
+                
         # First block
         model.add(layers.Conv2D(32, (3, 3), padding='same', activation='relu'))
         model.add(layers.BatchNormalization())
