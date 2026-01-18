@@ -11,3 +11,4 @@ data/hog_npy/
 *.joblib
 *.jpg
 *.keras
+*.out
