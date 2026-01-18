@@ -56,12 +56,18 @@ parser.add_argument('--images-dir',
                     help='Diretório contendo imagens em estrutura aninhada (classe_id/imagem.jpg). Ex: /Users/claradasneves/Documents/selecionadas')
 parser.add_argument('--img-size',
                     type=int,
-                    default=64,
-                    help='Tamanho para redimensionar imagens (padrão: 64)')
+                    default=128,
+                    help='Tamanho para redimensionar imagens (padrão: 128)')
 parser.add_argument('--batch-size',
                     type=int,
                     default=32,
                     help='Batch size para treinamento da CNN (padrão: 32)')
+parser.add_argument('--normalize',
+                    action='store_true',
+                    help='Aplica normalização z-score aos dados')
+parser.add_argument('--grayscale',
+                    action='store_true',
+                    help='Converte imagens para preto e branco')
 
 args = parser.parse_args()
 
@@ -385,7 +391,7 @@ def load_mock_dataset():
 
     return X.astype(float), y, num_features, num_classes
 
-def load_images_from_nested_structure(root_dir, img_size=64, max_classes=None):
+def load_images_from_nested_structure(root_dir, img_size=128, max_classes=None):
     print(f"Carregando imagens de {root_dir}...")
     
     class_dirs = sorted([d for d in _glob.glob(_os.path.join(root_dir, '*')) if _os.path.isdir(d)])
@@ -436,6 +442,10 @@ def load_images_from_nested_structure(root_dir, img_size=64, max_classes=None):
     sample_shape = X.shape[1:]
     
     return X, y, sample_shape, num_classes
+
+def rgb_to_grayscale(X):
+    # pesos padrão (luminância)
+    return np.dot(X[..., :3], [0.299, 0.587, 0.114])[..., np.newaxis]
 
 def load_celeba_dataset(args):
     print('loading celebA...')
@@ -578,7 +588,6 @@ def main(args):
 
     # 2 - split
     if args.train_on_images:
-        # For images, convert one-hot to indices for stratify
         y_idx = np.argmax(y, axis=1)
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42, stratify=y_idx
@@ -586,16 +595,21 @@ def main(args):
     else:
         X_train, y_train, X_test, y_test = split_train_test(X, y, rate=0.7)
 
-    # 3 - normalize
-    if args.train_on_images:
-        mean = X_train.mean(axis=(0, 1, 2), keepdims=True)
-        std = X_train.std(axis=(0, 1, 2), keepdims=True) + 1e-8
-    else:
-        mean = X_train.mean(axis=0)
-        std = X_train.std(axis=0) + 1e-8
+    # 3 - normalização
+    if args.normalize:
+        if args.train_on_images:
+            mean = X_train.mean(axis=(0, 1, 2), keepdims=True)
+            std = X_train.std(axis=(0, 1, 2), keepdims=True) + 1e-8
+        else:
+            mean = X_train.mean(axis=0)
+            std = X_train.std(axis=0) + 1e-8
 
-    X_train = (X_train - mean) / std
-    X_test  = (X_test - mean) / std
+        X_train = (X_train - mean) / std
+        X_test  = (X_test - mean) / std
+
+    if args.train_on_images and args.grayscale:
+        X_train = rgb_to_grayscale(X_train)
+        X_test  = rgb_to_grayscale(X_test)
 
     print('Train set shapes', X_train.shape, y_train.shape)
     print('Test set shapes', X_test.shape, y_test.shape)
